@@ -1,0 +1,64 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: pandoc/latex
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install mustache (to update the date)
+        run: |
+          apk add ruby
+          gem install mustache
+
+      - name: Run build script
+        run: |
+          echo "🔧 Running build script..."
+          sh -x ./build.sh || { echo "🚨 build.sh 실행 실패!"; exit 1; }
+
+      - name: Check available directories after build
+        run: |
+          echo "🔍 Checking directories after build..."
+          ls -al
+          echo "🔍 Checking inside subdirectories..."
+          find . -type d
+
+      - name: Detect correct build folder
+        id: detect-folder
+        run: |
+          echo "🔎 Detecting build folder..."
+          if [ -d "dist" ]; then
+            echo "BUILD_DIR=dist" >> $GITHUB_ENV
+            echo "✅ Build directory set to: dist"
+          elif [ -d "output" ]; then
+            echo "BUILD_DIR=output" >> $GITHUB_ENV
+            echo "✅ Build directory set to: output"
+          elif [ -d "build" ]; then
+            echo "BUILD_DIR=build" >> $GITHUB_ENV
+            echo "✅ Build directory set to: build"
+          else
+            echo "BUILD_DIR=." >> $GITHUB_ENV
+            echo "⚠️ No specific build folder found, using root directory (.)"
+          fi
+
+      - name: Pushes to another repository
+        id: push_directory
+        uses: cpina/github-action-push-to-another-repository@main
+        env:
+          API_TOKEN_GITHUB: ${{ secrets.AUTO_ACTIONS }}
+        with:
+          source-directory: ${{ env.BUILD_DIR }}
+          destination-github-username: yelynnn
+          destination-repository-name: JMarketYard
+          user-email: ${{ secrets.EMAIL }}
+          commit-message: "Restore full repository - Automated Deployment"  
+          target-branch: develop
+
+      - name: Test get variable exported by push-to-another-repository
+        run: echo "DESTINATION_CLONED_DIRECTORY = $DESTINATION_CLONED_DIRECTORY"
