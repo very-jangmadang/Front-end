@@ -16,20 +16,22 @@ function AdBanner() {
     slidesToScroll: 1,
     autoplay: true,
     speed: 1500,
-    autoplaySpeed: 4000,
-    centerMode: true,
-    centerPadding: '20%',
+    autoplaySpeed: 3000,
+    centerMode: false,      // 중앙 모드 해제
+    centerPadding: '0%',   // 패딩 없음
     cssEase: 'ease',
     responsive: [
       {
-        breakpoint: 744, // 744px 이하일 때 적용됨
+        breakpoint: 744,
         settings: {
+          centerMode: false,
           centerPadding: '0%',
         },
       },
       {
         breakpoint: 390,
         settings: {
+          centerMode: false,
           centerPadding: '0%',
           dots: false,
         },
@@ -63,7 +65,8 @@ function AdBanner() {
 export default AdBanner;
 
 const Wrapper = styled.div`
-  width: 1440px;
+  width: 100%;
+  max-width: 1440px;
   height: 396px;
   margin: 39px auto 61px auto;
   box-sizing: content-box;
@@ -94,30 +97,33 @@ const Wrapper = styled.div`
     }
   }
   ${media.medium`
-  width:100%;
-  margin: 39px 0 61px 0;
+    width: 100%;
+    max-width: 100%;
+    margin: 39px 0 61px 0;
   `}
 `;
 
 const AdBox = styled.div`
-  width: 825px;
-  height: 369px;
+  width: 59.375rem;   // 950px
+  height: 23.0625rem; // 369px
   flex-shrink: 0;
-  margin: 0 23px;
   border-radius: 31px;
-  overflow: hidden;
+  overflow: visible;  // 잘리지 않게!
   display: flex;
   justify-content: center;
   align-items: center;
   background-color: #e4e4e4;
   ${media.medium`
-  width:100%;
-  border-radius: 0px;
+    width: 100%;
+    height: auto;
+    border-radius: 0px;
   `}
 `;
 
 const AdImage = styled.img`
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  display: block;
+  background: #fff;
 `;
