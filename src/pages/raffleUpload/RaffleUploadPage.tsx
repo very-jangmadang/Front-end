@@ -11,9 +11,22 @@ import ImgSlider from './components/imageSlider';
 import CustomCalendar from './components/CustomCalendar';
 
 const RaffleUploadPage = () => {
+  const itemStates = [
+    { key: 'UNOPENED', text: '미개봉' },
+    { key: 'NEW', text: '새상품' },
+    { key: 'HIGH', text: '상' },
+    { key: 'MID', text: '중' },
+    { key: 'LOW', text: '하' },
+  ];
   const [moreTicketText, setMoreTicketText] = useState<string>('직접 입력');
   const tickets = ['1개', '2개', '3개', moreTicketText];
+  const care = [
+    { key: 'care', text: '사용' },
+    { key: 'no', text: '미사용' },
+  ];
+  const [itemState, setItemState] = useState<string>('');
   const [ticketNum, setTicketNum] = useState<string>('1개');
+  const [jcare, setJcare] = useState<string>('');
   // 시작 날짜 최소: 래플 업로드 눌렀을 때 현재 시각 + 10분 후부터 가능
   const [startDate, setStartDate] = useState<null | Date>(null);
   const [endDate, setEndDate] = useState<null | Date>(null);
@@ -25,6 +38,7 @@ const RaffleUploadPage = () => {
   const fileRef = useRef<HTMLInputElement>(null);
   const [images, setImages] = useState<File[]>([]);
   const [category, setCategory] = useState<string>('');
+  const [deliveryFee, setDeliveryFee] = useState<string>('');
 
   // 응모 시작 시간 조건
   const createdAt = new Date();
@@ -54,10 +68,11 @@ const RaffleUploadPage = () => {
     if (
       category === '' ||
       name === '' ||
+      itemState === '' ||
       description.length === 0
     )
       return alert('상품 정보를 모두 입력해주세요');
-    if (ticketNum === '')
+    if (ticketNum === '' || jcare === '' || deliveryFee === '')
       return alert('거래 설정을 모두 입력해주세요');
     if (
       startDate === null ||
@@ -92,7 +107,8 @@ const RaffleUploadPage = () => {
       return alert('개최 기간이 올바르지 않습니다');
     if (endAt.getTime() - startAt.getTime() > 30 * 24 * 60 * 60 * 1000)
       return alert('응모 진행 기간은 최대 30일입니다');
-
+    if (parseInt(deliveryFee.replace(',', '')) > 10000)
+      return alert('배송비는 최대 1만원까지 입력 가능합니다');
 
     const formData = new FormData();
     images.forEach((image) => {
@@ -101,6 +117,7 @@ const RaffleUploadPage = () => {
     });
     formData.append('category', category);
     formData.append('name', name);
+    formData.append('itemStatus', itemState);
     formData.append('description', description);
     formData.append('ticketNum', parseInt(ticketNum).toString());
     formData.append('minTicket', leastTicketNum.replace(',', ''));
@@ -116,7 +133,7 @@ const RaffleUploadPage = () => {
       'endAt',
       new Date(endAt.getTime() + offset).toISOString().slice(0, 19),
     );
-
+    formData.append('deliveryFee', deliveryFee.replace(',', ''));
 
     openModal(({ onClose }) => (
       <UploadModal
@@ -128,9 +145,15 @@ const RaffleUploadPage = () => {
     ));
   };
 
+  const handleItemState = (key: string) => {
+    setItemState(key);
+  };
   const handleTicketNum = (key: string) => {
     if (key === moreTicketText) handleTicketModal();
     else setTicketNum(key);
+  };
+  const handleJcare = (key: string) => {
+    setJcare(key);
   };
 
   const handleLeastTicketNum = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -141,7 +164,13 @@ const RaffleUploadPage = () => {
     );
   };
 
-
+  const handleDeliveryFee = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setDeliveryFee(
+      e.target.value
+        .replace(/[^0-9]/g, '')
+        .replace(/\B(?=(\d{3})+(?!\d))/g, ','),
+    );
+  };
 
   // 응모 티켓 개수 직접 입력 모달 open
   const handleTicketModal = () => {
@@ -223,6 +252,20 @@ const RaffleUploadPage = () => {
                 />
               </InputContainer>
             </div>
+            <div>
+              <TitleSpan>상태</TitleSpan>
+              {itemStates.map((item) => (
+                <ConditionBtn
+                  type="button"
+                  key={item.key}
+                  onClick={() => handleItemState(item.key)}
+                  $clicked={String(item.key === itemState)}
+                  $isState={true}
+                >
+                  {item.text}
+                </ConditionBtn>
+              ))}
+            </div>
             <TextareaDiv>
               <TitleSpan>설명</TitleSpan>
               <Textarea id="upload-textarea" />
@@ -249,6 +292,21 @@ const RaffleUploadPage = () => {
             </div>
           </SetConditionBox>
           <SetConditionBox>
+            <TitleSpan2>장마당 케어</TitleSpan2>
+            <div>
+              {care.map((v) => (
+                <ConditionBtn
+                  type="button"
+                  key={v.key}
+                  onClick={() => handleJcare(v.key)}
+                  $clicked={String(v.key === jcare)}
+                >
+                  {v.text}
+                </ConditionBtn>
+              ))}
+            </div>
+          </SetConditionBox>
+          <SetConditionBox>
             <TitleSpan2>최소 마감 티켓 개수</TitleSpan2>
             <InputContainer>
               <InputBox
@@ -257,6 +315,13 @@ const RaffleUploadPage = () => {
                 value={leastTicketNum}
                 onChange={handleLeastTicketNum}
               />
+              <StyleP>
+                예상 정산 금액:&nbsp;
+                {(
+                  Number(leastTicketNum.replaceAll(',', '')) * 100
+                ).toLocaleString()}
+                원
+              </StyleP>
             </InputContainer>
           </SetConditionBox>
           <SetConditionBox>
@@ -292,7 +357,17 @@ const RaffleUploadPage = () => {
               setTime={setEndTime}
             />
           </SetConditionBox>
-
+          <SetConditionBox>
+            <TitleSpan2>배송비</TitleSpan2>
+            <InputContainer>
+              <InputBox
+                type="text"
+                value={deliveryFee}
+                onChange={handleDeliveryFee}
+              />
+              <StyleP>최대 1만원까지 입력가능</StyleP>
+            </InputContainer>
+          </SetConditionBox>
         </SetConditionContainer>
       </div>
       <SubmitBtn type="submit" value={'업로드'} onClick={handleSubmit} />
