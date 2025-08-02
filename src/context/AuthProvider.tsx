@@ -13,20 +13,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (retryCount = 0) => {
     // 로그아웃 중이거나 로그아웃 상태가 저장되어 있으면 로그인 체크하지 않음
     if (isLoggingOut || localStorage.getItem('isLoggingOut') === 'true') {
-      console.log('🚫 로그아웃 중이므로 로그인 체크 건너뜀');
+      console.log('로그아웃 중이므로 로그인 체크 건너뜀');
       return;
     }
 
     // 로그아웃 후 강제로 인증 상태를 false로 유지
     const forceLogout = localStorage.getItem('forceLogout') === 'true';
     if (forceLogout) {
-      console.log('🚫 강제 로그아웃 상태 - 로그인 체크 건너뜀');
+      console.log('강제 로그아웃 상태 - 로그인 체크 건너뜀');
       setIsAuthenticated(false);
       return;
     }
 
     try {
-      console.log('🔍 로그인 상태 체크 시작');
+      console.log('로그인 상태 체크 시작');
       const { data } = await axiosInstance.get('/api/permit/user-info', {
         withCredentials: true,
       });
@@ -34,7 +34,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       // 로그아웃 중이면 서버 응답을 무시
       if (isLoggingOut || localStorage.getItem('isLoggingOut') === 'true') {
-        console.log('🚫 로그아웃 중이므로 서버 응답 무시');
+        console.log('로그아웃 중이므로 서버 응답 무시');
         return;
       }
       
@@ -77,13 +77,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // 로그아웃 함수
   const logout = async () => {
-    console.log('🚪 로그아웃 시작');
+    console.log('로그아웃 시작');
     setIsLoggingOut(true); // 로그아웃 시작
     localStorage.setItem('isLoggingOut', 'true'); // localStorage에 로그아웃 상태 저장
     localStorage.setItem('forceLogout', 'true'); // 강제 로그아웃 플래그 설정
     
     try {
-      console.log('📡 서버 로그아웃 요청 시작');
+      console.log('서버 로그아웃 요청 시작');
       const response = await axiosInstance.post(
         '/api/permit/logout',
         {},
@@ -95,17 +95,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         },
       );
       if (response.status===200) {
-        console.log('✅ 서버 로그아웃 성공:', response);
+        console.log('서버 로그아웃 성공:', response);
         
         // 클라이언트 측 쿠키 삭제
-        console.log('🍪 로그아웃 전 쿠키:', document.cookie);
+        console.log('로그아웃 전 쿠키:', document.cookie);
         
         // 모든 쿠키 삭제
         const cookies = document.cookie.split(";");
         cookies.forEach(function(cookie) {
           const eqPos = cookie.indexOf("=");
           const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
-          console.log('🗑️ 쿠키 삭제:', name);
+          console.log('쿠키 삭제:', name);
           
           // 다양한 도메인과 경로로 쿠키 삭제
           document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;`;
@@ -113,40 +113,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.${window.location.hostname};`;
         });
         
-        console.log('🍪 로그아웃 후 쿠키:', document.cookie);
+        console.log('로그아웃 후 쿠키:', document.cookie);
         
         setIsAuthenticated(false);
-        console.log('🔒 인증 상태를 false로 설정');
+        console.log('인증 상태를 false로 설정');
         
         // 로그아웃 완료 후 플래그 리셋 및 홈으로 이동
         setTimeout(() => {
-          console.log('🔄 로그아웃 완료 - 홈으로 이동');
+          console.log('로그아웃 완료 - 페이지 완전 새로고침');
           setIsLoggingOut(false);
           localStorage.removeItem('isLoggingOut'); // localStorage에서 로그아웃 상태 제거
           localStorage.removeItem('forceLogout'); // 강제 로그아웃 플래그 제거
-          window.location.replace('/');
+          // 페이지를 완전히 새로고침하여 모든 상태 초기화
+          window.location.href = '/';
+          window.location.reload();
         }, 1000); // 시간을 늘려서 충분한 지연 확보
       }
     } catch (error: any) {
-      console.error('❌ 로그아웃 중 에러 발생:', error);
+      console.error('로그아웃 중 에러 발생:', error);
       
       if (error.response) {
-        console.error('📡 서버 응답 에러:', {
+        console.error('서버 응답 에러:', {
           status: error.response.status,
           responseCode: error.response.data?.code,
           message: error.response.data?.message,
         });
       } else {
-        console.error('🌐 네트워크 에러:', error);
+        console.error('네트워크 에러:', error);
       }
       
       // 에러가 발생해도 클라이언트 측 쿠키 삭제 및 로그아웃 처리
-      console.log('🍪 에러 발생 시 쿠키 삭제 시작');
+      console.log('에러 발생 시 쿠키 삭제 시작');
       const cookies = document.cookie.split(";");
       cookies.forEach(function(cookie) {
         const eqPos = cookie.indexOf("=");
         const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
-        console.log('🗑️ 쿠키 삭제:', name);
+        console.log('쿠키 삭제:', name);
         
         document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;`;
         document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${window.location.hostname};`;
@@ -154,15 +156,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
       
       setIsAuthenticated(false);
-      console.log('🔒 에러 발생 시에도 인증 상태를 false로 설정');
+      console.log('에러 발생 시에도 인증 상태를 false로 설정');
       
       // 에러 발생 시에도 플래그 리셋 및 홈으로 이동
       setTimeout(() => {
-        console.log('🔄 에러 발생 시에도 로그아웃 완료 - 홈으로 이동');
+        console.log('에러 발생 시에도 로그아웃 완료 - 페이지 완전 새로고침');
         setIsLoggingOut(false);
         localStorage.removeItem('isLoggingOut'); // localStorage에서 로그아웃 상태 제거
         localStorage.removeItem('forceLogout'); // 강제 로그아웃 플래그 제거
-        window.location.replace('/');
+        // 페이지를 완전히 새로고침하여 모든 상태 초기화
+        window.location.href = '/';
+        window.location.reload();
       }, 1000);
     };
   };
@@ -202,10 +206,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const forceLogoutStored = localStorage.getItem('forceLogout') === 'true';
     
     if (!isLoggingOutStored && !forceLogoutStored) {
-      console.log('🔍 앱 초기화 - 로그인 상태 체크 시작');
+      console.log('앱 초기화 - 로그인 상태 체크 시작');
       login();
     } else {
-      console.log('🚫 저장된 로그아웃 상태로 인해 로그인 체크 건너뜀');
+      console.log('저장된 로그아웃 상태로 인해 로그인 체크 건너뜀');
       if (isLoggingOutStored) {
         localStorage.removeItem('isLoggingOut'); // 초기화 시 제거
       }

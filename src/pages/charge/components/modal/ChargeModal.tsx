@@ -25,11 +25,11 @@ const ChargeModal: React.FC<ModalProps> = ({ onClose, amount }) => {
     mutationFn: PostCharge,
     onSuccess: (data) => {
       if (!data?.redirectUrl) {
-        console.error('🚨 redirectUrl이 존재하지 않습니다.');
+        console.error('redirectUrl이 존재하지 않습니다.');
         return;
       }
 
-      console.log('🔍 원본 redirectUrl:', data.redirectUrl);
+      console.log('원본 redirectUrl:', data.redirectUrl);
 
       try {
         let fullRedirectUrl = data.redirectUrl;
@@ -39,7 +39,7 @@ const ChargeModal: React.FC<ModalProps> = ({ onClose, amount }) => {
           fullRedirectUrl = `${window.location.origin}${fullRedirectUrl}`;
         }
 
-        console.log('🌍 변환된 URL:', fullRedirectUrl);
+        console.log('변환된 URL:', fullRedirectUrl);
 
         const urlParams = new URLSearchParams(new URL(fullRedirectUrl).search);
         const actualUrl = urlParams.get('url');
@@ -47,11 +47,11 @@ const ChargeModal: React.FC<ModalProps> = ({ onClose, amount }) => {
         let tid = urlParams.get('tid'); // tid 추출
 
         if (!tid) {
-          console.warn('⚠️ TID가 없어서 "tid"라는 기본 값을 사용합니다.');
+          console.warn('TID가 없어서 "tid"라는 기본 값을 사용합니다.');
           tid = 'tid'; // tid가 없을 경우 기본값 설정
         }
 
-        console.log('🔄 now tid:', tid); // tid 로그 출력
+        console.log('now tid:', tid); // tid 로그 출력
 
         // 쿠키를 '/api/payment/approve' 경로에 설정
         Cookies.set('tid', tid, {
@@ -65,13 +65,13 @@ const ChargeModal: React.FC<ModalProps> = ({ onClose, amount }) => {
         console.log('쿠키 설정:', document.cookie); // 쿠키가 제대로 설정되었는지 확인
 
         if (actualUrl && actualUrl.startsWith('https://')) {
-          console.log('🔄 Redirecting to:', actualUrl);
+          console.log('Redirecting to:', actualUrl);
           window.location.href = actualUrl;
         } else {
-          console.error('🚨 URL parameter "url" not found or invalid.');
+          console.error('URL parameter "url" not found or invalid.');
         }
       } catch (error) {
-        console.error('🚨 Error processing redirect URL:', error);
+        console.error('Error processing redirect URL:', error);
       }
     },
     onError: (error) => {
