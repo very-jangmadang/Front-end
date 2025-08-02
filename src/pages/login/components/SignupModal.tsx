@@ -17,10 +17,15 @@ interface ModalProps {
 const RequestSignUp = async (nickname: string, email: string | null) => {
   const requestBody: any = { nickname };
   
-  // 이메일이 있으면 request body에 추가
+  // 이메일이 있으면 request body에 추가 (세션 대신 직접 전달)
   if (email) {
     requestBody.email = email;
+    console.log('이메일을 request body에 포함하여 전송:', email);
+  } else {
+    console.log('이메일 정보가 없습니다.');
   }
+  
+  console.log('회원가입 요청 데이터:', requestBody);
   
   const response = await axiosInstance.post('/api/permit/nickname', requestBody, {
     withCredentials: true

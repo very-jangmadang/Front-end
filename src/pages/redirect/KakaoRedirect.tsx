@@ -4,6 +4,7 @@ import ConsentModal from '../login/components/ConsentModal';
 import styled from 'styled-components';
 import { SetCookie } from '../../apis/payAPI';
 import { useSearchParams } from 'react-router-dom';
+import axiosInstance from '../../apis/axiosInstance';
 
 function KakaoRedirect() {
   const { openModal } = useModalContext();
@@ -25,11 +26,19 @@ function KakaoRedirect() {
 
         if (token) {
           console.log('토큰 설정 시작...');
-          // 토큰을 서버에 전송하여 쿠키 설정
-          await SetCookie(token);
-          
-          console.log('쿠키 설정 완료');
-          console.log('현재 쿠키:', document.cookie);
+          // 토큰을 서버에 전송하여 쿠키 설정 (302 응답 대신 200 응답으로 처리)
+          try {
+            await axiosInstance.post('/api/permit/set-cookie', {
+              token: token
+            }, {
+              withCredentials: true
+            });
+            console.log('쿠키 설정 완료');
+            console.log('현재 쿠키:', document.cookie);
+          } catch (error) {
+            console.error('쿠키 설정 실패:', error);
+            // 쿠키 설정 실패 시에도 계속 진행
+          }
         } else {
           console.warn('토큰이 없습니다!');
         }

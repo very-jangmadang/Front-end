@@ -85,7 +85,7 @@ const GetExchangeHistory = async (period: string) => {
   }
 };
 
-// 쿠키 설정 API
+// 쿠키 설정 API (302 응답 대신 200 응답으로 처리)
 export const SetCookie = async (token: string) => {
   const response = await axiosInstance.post('/api/permit/set-cookie', {
     token: token
