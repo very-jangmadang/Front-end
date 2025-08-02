@@ -114,6 +114,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         // 모든 쿠키 삭제
         const cookies = document.cookie.split(";");
+        console.log('삭제할 쿠키 목록:', cookies);
+        
         cookies.forEach(function(cookie) {
           const eqPos = cookie.indexOf("=");
           const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
@@ -134,7 +136,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setTimeout(() => {
           console.log('로그아웃 완료 - 홈으로 이동');
           setIsLoggingOut(false);
-          window.location.href = '/';
+          // 서버 세션을 완전히 삭제하기 위해 강제 새로고침
+          window.location.reload();
         }, 1000);
       } else {
         console.warn('로그아웃 응답 상태 코드 이상:', response.status);
@@ -172,7 +175,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setTimeout(() => {
         console.log('에러 발생 시에도 로그아웃 완료 - 홈으로 이동');
         setIsLoggingOut(false);
-        window.location.href = '/';
+        // 서버 세션을 완전히 삭제하기 위해 강제 새로고침
+        window.location.reload();
       }, 1000);
     };
   };

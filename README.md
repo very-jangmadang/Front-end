@@ -71,6 +71,42 @@ res.cookie('sessionId', sessionId, {
 });
 ```
 
+### 8. 로그아웃 문제 해결
+로그아웃 후 다시 로그인이 되는 문제가 발생하는 경우:
+
+#### 백엔드 로그아웃 API 확인
+```javascript
+// POST /api/permit/logout
+app.post('/api/permit/logout', (req, res) => {
+  // 세션 완전 삭제
+  req.session.destroy((err) => {
+    if (err) {
+      console.error('세션 삭제 실패:', err);
+      return res.status(500).json({
+        isSuccess: false,
+        code: 'SERVER_ERROR',
+        message: '로그아웃 처리 중 오류가 발생했습니다.'
+      });
+    }
+    
+    // 쿠키도 삭제
+    res.clearCookie('connect.sid'); // 세션 쿠키
+    res.clearCookie('accessToken'); // 액세스 토큰 쿠키
+    
+    res.json({
+      isSuccess: true,
+      code: 'USER_2004',
+      message: '성공적으로 로그아웃하였습니다.',
+      result: {}
+    });
+  });
+});
+```
+
+#### 프론트엔드 로그아웃 처리
+- 로그아웃 후 `window.location.reload()`로 강제 새로고침
+- 서버 세션을 완전히 삭제하기 위함
+
 ### 6. 회원가입 문제 디버깅
 회원가입이 안 되는 경우 브라우저 개발자 도구 콘솔에서 다음을 확인하세요:
 
