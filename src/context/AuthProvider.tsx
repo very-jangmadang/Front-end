@@ -101,6 +101,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         // 백엔드 응답 형식 확인
         const responseData = response.data;
+        console.log('로그아웃 응답 데이터:', responseData);
+        
         if (responseData && responseData.isSuccess) {
           console.log('로그아웃 성공:', responseData.message);
         } else {
@@ -134,6 +136,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setIsLoggingOut(false);
           window.location.href = '/';
         }, 1000);
+      } else {
+        console.warn('로그아웃 응답 상태 코드 이상:', response.status);
       }
     } catch (error: any) {
       console.error('로그아웃 중 에러 발생:', error);

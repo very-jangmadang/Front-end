@@ -2,9 +2,25 @@
 
 ## 도메인 변경 후 설정 가이드
 
-### 1. Vercel 환경 변수 설정
-- `VITE_API_BASE_URL`: `https://api.jangmadang.site`
-- `VITE_API_ACCESS_TOKEN`: 백엔드에서 제공하는 액세스 토큰
+### 1. Vercel 환경 변수 설정 (중요!)
+Vercel 대시보드에서 다음 환경 변수를 반드시 설정해야 합니다:
+
+1. **Vercel 대시보드 접속**: https://vercel.com/dashboard
+2. **프로젝트 선택**: `jmd-fe` 프로젝트
+3. **Settings → Environment Variables** 클릭
+4. **다음 변수들 추가**:
+
+```bash
+# 필수 환경 변수
+VITE_API_BASE_URL=https://api.jangmadang.site
+VITE_API_ACCESS_TOKEN=your_access_token_here
+```
+
+5. **Environment 선택**: Production, Preview, Development 모두 체크
+6. **Save** 클릭
+7. **Redeploy** 실행
+
+**중요**: 환경 변수 설정 후 반드시 재배포해야 합니다!
 
 ### 2. 백엔드 CORS 설정
 백엔드에서 `jmd-fe.vercel.app` 도메인을 허용하도록 CORS 설정을 업데이트해야 합니다.
@@ -53,6 +69,17 @@ const { nickname, email } = req.body;
 - `KakaoRedirect.tsx`: URL 파라미터에서 token, email 추출 후 `/api/permit/set-cookie` 호출
 - `SignupModal.tsx`: 이메일을 request body에 포함하여 전송
 - 쿠키 도메인을 `window.location.hostname`으로 동적 설정
+
+### 6. 환경 변수 확인 방법
+브라우저 콘솔에서 다음을 확인하세요:
+```javascript
+console.log('API 설정 정보:', {
+  baseURL: import.meta.env.VITE_API_BASE_URL,
+  hasAccessToken: !!import.meta.env.VITE_API_ACCESS_TOKEN
+});
+```
+
+`hasAccessToken: false`가 나오면 환경 변수가 설정되지 않은 것입니다.
 
 ### 6. 회원가입 문제 디버깅
 회원가입이 안 되는 경우 브라우저 개발자 도구 콘솔에서 다음을 확인하세요:
