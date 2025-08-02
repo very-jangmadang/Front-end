@@ -23,22 +23,45 @@ function AdBanner() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // SVG 파일들을 동적으로 로드
+    // public 폴더의 SVG 파일들을 사용하여 Babel 경고 방지
     const loadImages = async () => {
       try {
-        const [promotion1, promotion2, promotion3] = await Promise.all([
-          import('../../../assets/homePage/promotion1.svg'),
-          import('../../../assets/homePage/promotion2.svg'),
-          import('../../../assets/homePage/promotion3.svg')
+        // public 폴더의 이미지 URL (빌드 시 정적 파일로 처리됨)
+        const imageUrls = {
+          promotion1: '/assets/homePage/promotion1.svg',
+          promotion2: '/assets/homePage/promotion2.svg',
+          promotion3: '/assets/homePage/promotion3.svg'
+        };
+
+        // 이미지가 실제로 존재하는지 확인
+        const checkImage = (url: string): Promise<string> => {
+          return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => resolve(url);
+            img.onerror = () => {
+              console.warn(`이미지를 로드할 수 없습니다: ${url}`);
+              // 폴백 이미지 또는 빈 문자열 반환
+              resolve('');
+            };
+            img.src = url;
+          });
+        };
+
+        const loadedImages = await Promise.all([
+          checkImage(imageUrls.promotion1),
+          checkImage(imageUrls.promotion2),
+          checkImage(imageUrls.promotion3)
         ]);
 
         setImages({
-          promotion1: promotion1.default,
-          promotion2: promotion2.default,
-          promotion3: promotion3.default
+          promotion1: loadedImages[0],
+          promotion2: loadedImages[1],
+          promotion3: loadedImages[2]
         });
       } catch (error) {
         console.error('이미지 로딩 실패:', error);
+        // 에러 발생 시 빈 객체로 설정
+        setImages({});
       } finally {
         setIsLoading(false);
       }

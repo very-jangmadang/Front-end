@@ -1,19 +1,29 @@
 {
   "generatorOpts": {
     "compact": false,
-    "maxSize": 1000000
+    "maxSize": 2000000
   },
   "env": {
     "development": {
-      "compact": false
+      "compact": false,
+      "generatorOpts": {
+        "maxSize": 2000000
+      }
     },
     "production": {
-      "compact": true
+      "compact": true,
+      "generatorOpts": {
+        "maxSize": 2000000
+      }
     }
   },
   "ignore": [
     "**/node_modules/**",
     "**/dist/**",
-    "**/build/**"
-  ]
+    "**/build/**",
+    "**/src/assets/homePage/promotion1.svg",
+    "**/src/assets/homePage/promotion2.svg",
+    "**/src/assets/homePage/promotion3.svg"
+  ],
+  "comments": false
 } 

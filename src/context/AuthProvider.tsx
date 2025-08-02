@@ -30,12 +30,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
       
-      if (data.result === 'user') {
-        setIsAuthenticated(true);
-        console.log('사용자 인증 성공 (user)');
+      // 백엔드 응답 형식에 맞춰서 처리
+      if (data && data.isSuccess) {
+        if (data.result === 'user') {
+          setIsAuthenticated(true);
+          console.log('사용자 인증 성공 (user)');
+        } else {
+          setIsAuthenticated(false);
+          console.log('게스트 인증 (guest)');
+        }
       } else {
+        console.warn('로그인 체크 응답 형식 이상:', data);
         setIsAuthenticated(false);
-        console.log('게스트 인증 (guest)');
       }
     } catch (error: any) {
       if (error.response) {
@@ -92,6 +98,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       );
       if (response.status===200) {
         console.log('서버 로그아웃 성공:', response);
+        
+        // 백엔드 응답 형식 확인
+        const responseData = response.data;
+        if (responseData && responseData.isSuccess) {
+          console.log('로그아웃 성공:', responseData.message);
+        } else {
+          console.warn('로그아웃 응답 형식 이상:', responseData);
+        }
         
         // 클라이언트 측 쿠키 삭제
         console.log('로그아웃 전 쿠키:', document.cookie);

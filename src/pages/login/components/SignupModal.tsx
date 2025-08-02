@@ -22,7 +22,7 @@ const RequestSignUp = async (nickname: string, email: string | null) => {
     requestBody.email = email;
     console.log('이메일을 request body에 포함하여 전송:', email);
   } else {
-    console.log('이메일 정보가 없습니다.');
+    console.log('이메일 정보가 없습니다');
   }
   
   console.log('회원가입 요청 데이터:', requestBody);

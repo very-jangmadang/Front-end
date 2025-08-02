@@ -19,7 +19,7 @@ export default defineConfig({
       }
     },
     // 빌드 최적화 설정
-    chunkSizeWarningLimit: 1000, // 청크 크기 경고 임계값 증가
+    chunkSizeWarningLimit: 2000, // 청크 크기 경고 임계값 증가
   },
   // SVG 최적화 설정
   optimizeDeps: {
@@ -32,9 +32,8 @@ export default defineConfig({
   // server: {
   //   proxy: {
   //     '/api': {
-  //       target: import.meta.env.VITE_API_BASE_URL, // 백엔드 서버 주소
+  //       target: 'http://localhost:3000',
   //       changeOrigin: true,
-  //       secure: false,
   //     },
   //   },
   // },

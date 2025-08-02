@@ -2,88 +2,59 @@
 
 ## 도메인 변경 후 설정 가이드
 
-도메인이 `jangmadang.site`에서 `jmd-fe.vercel.app`으로 변경된 후 필요한 설정:
-
 ### 1. Vercel 환경 변수 설정
-Vercel 대시보드에서 다음 환경 변수를 설정해야 합니다:
+- `VITE_API_BASE_URL`: `https://api.jangmadang.site`
+- `VITE_API_ACCESS_TOKEN`: 백엔드에서 제공하는 액세스 토큰
 
-```bash
-VITE_API_BASE_URL=https://api.jangmadang.site  # 또는 새로운 API 서버 주소
-VITE_API_ACCESS_TOKEN=your_access_token
-```
-
-**중요**: 환경 변수 설정 후 Vercel 프로젝트를 다시 배포해야 합니다.
-
-### 2. 백엔드 CORS 설정 확인
-백엔드에서 다음 도메인을 허용하도록 CORS 설정을 확인하세요:
-
-```javascript
-// 백엔드 CORS 설정 예시
-const allowedOrigins = [
-  'https://jmd-fe.vercel.app',
-  'https://www.jmd-fe.vercel.app',
-  'http://localhost:5173' // 개발 환경
-];
-```
+### 2. 백엔드 CORS 설정
+백엔드에서 `jmd-fe.vercel.app` 도메인을 허용하도록 CORS 설정을 업데이트해야 합니다.
 
 ### 3. 카카오 로그인 리다이렉트 URL 변경
-카카오 개발자 콘솔에서 리다이렉트 URL을 변경하세요:
-- 기존: `https://jangmadang.site/kakao`
-- 변경: `https://jmd-fe.vercel.app/kakao`
+카카오 개발자 콘솔에서 리다이렉트 URL을 `https://jmd-fe.vercel.app/kakao`로 변경해야 합니다.
 
-### 4. 백엔드 API 변경사항 (필수)
+### 4. 백엔드 API 변경사항
 
-#### 4.1 카카오 로그인 후 토큰 전달 방식 변경
-**기존**: 302 응답으로 쿠키 설정
+#### 카카오 로그인 리다이렉트 변경
 ```javascript
-// 기존 방식 (크로스 도메인에서 문제 발생)
-res.redirect('https://jangmadang.site/kakao?session=token');
+// 기존
+res.redirect('https://jangmadang.site/kakao');
+
+// 변경
+res.redirect('https://jmd-fe.vercel.app/kakao?token=JWT_TOKEN&email=USER_EMAIL&isNewUser=true/false');
 ```
 
-**변경**: URL 파라미터로 토큰 전달 + 별도 API 호출
-```javascript
-// 새로운 방식
-res.redirect('https://jmd-fe.vercel.app/kakao?token=JWT_TOKEN&email=user@example.com&isNewUser=true');
-```
-
-#### 4.2 새로운 API 엔드포인트 추가
+#### 새로운 API 추가
 ```javascript
 // POST /api/permit/set-cookie
 // 토큰을 받아서 쿠키로 설정 (200 응답)
 app.post('/api/permit/set-cookie', (req, res) => {
   const { token } = req.body;
   // 토큰을 쿠키로 설정
-  res.cookie('authToken', token, {
+  res.cookie('accessToken', token, {
     httpOnly: true,
     secure: true,
-    sameSite: 'Lax',
-    domain: '.jangmadang.site' // 또는 적절한 도메인
+    sameSite: 'none',
+    domain: '.jangmadang.site'
   });
-  res.json({ success: true });
+  res.json({ isSuccess: true, code: 'COMMON_200', message: '쿠키 설정 완료' });
 });
 ```
 
-#### 4.3 신규 사용자 닉네임 설정 API 수정
-**기존**: 세션에서 이메일 추출
+#### 닉네임 설정 API 수정
 ```javascript
-// 기존 방식
-app.post('/api/permit/nickname', (req, res) => {
-  const email = req.session.oauthemail; // 세션에서 이메일 추출
-  const { nickname } = req.body;
-  // 사용자 저장
-});
+// 기존: 세션에서 이메일 추출
+const email = req.session.oauthemail;
+
+// 변경: request body에서 이메일 받기
+const { nickname, email } = req.body;
 ```
 
-**변경**: Request body에서 이메일 받기
-```javascript
-// 새로운 방식
-app.post('/api/permit/nickname', (req, res) => {
-  const { nickname, email } = req.body; // Request body에서 이메일 받기
-  // 사용자 저장
-});
-```
+### 5. 프론트엔드 변경사항
+- `KakaoRedirect.tsx`: URL 파라미터에서 token, email 추출 후 `/api/permit/set-cookie` 호출
+- `SignupModal.tsx`: 이메일을 request body에 포함하여 전송
+- 쿠키 도메인을 `window.location.hostname`으로 동적 설정
 
-### 5. 회원가입 문제 디버깅
+### 6. 회원가입 문제 디버깅
 회원가입이 안 되는 경우 브라우저 개발자 도구 콘솔에서 다음을 확인하세요:
 
 1. **환경 변수 확인**
@@ -101,11 +72,11 @@ app.post('/api/permit/nickname', (req, res) => {
    - 403: 권한 없음 (CORS 문제)
    - 500: 서버 오류
 
-### 6. 쿠키 도메인 설정
+### 7. 쿠키 도메인 설정
 - 쿠키 도메인이 동적으로 설정되도록 수정 완료
 - `window.location.hostname`을 사용하여 현재 도메인에 맞게 자동 설정
 
-### 7. 로그아웃 문제 해결
+### 8. 로그아웃 문제 해결
 - 클라이언트 측 쿠키 삭제 로직 추가
 - 로그아웃 후 자동 로그인 방지
 - 간단한 로그아웃 상태 관리

@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import { useModalContext } from '../../components/Modal/context/ModalContext';
 import ConsentModal from '../login/components/ConsentModal';
 import styled from 'styled-components';
-import { SetCookie } from '../../apis/payAPI';
 import { useSearchParams } from 'react-router-dom';
 import axiosInstance from '../../apis/axiosInstance';
 
@@ -11,7 +10,7 @@ function KakaoRedirect() {
   const [searchParams] = useSearchParams();
 
   useEffect(() => {
-    console.log('KakaoRedirect useEffect 실행됨!');
+    console.log('KakaoRedirect useEffect 실행됨');
     console.log('현재 URL:', window.location.href);
     console.log('URL 파라미터:', Object.fromEntries(searchParams.entries()));
     
@@ -25,8 +24,8 @@ function KakaoRedirect() {
         console.log('추출된 파라미터:', { token, email, isNewUser });
 
         if (token) {
-          console.log('토큰 설정 시작...');
-          // 토큰을 서버에 전송하여 쿠키 설정 (302 응답 대신 200 응답으로 처리)
+          console.log('토큰 설정 시작');
+          // 새로운 set-cookie API 호출 (200 응답으로 처리)
           try {
             await axiosInstance.post('/api/permit/set-cookie', {
               token: token
@@ -40,7 +39,7 @@ function KakaoRedirect() {
             // 쿠키 설정 실패 시에도 계속 진행
           }
         } else {
-          console.warn('토큰이 없습니다!');
+          console.warn('토큰이 없습니다');
         }
 
         // 약간의 지연 후 다음 모달 열기
@@ -70,9 +69,12 @@ function KakaoRedirect() {
 }
 
 const Container = styled.div`
+  width: 100%;
+  height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
+  background-color: #f5f5f5;
 `;
 
 export default KakaoRedirect;
