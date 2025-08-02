@@ -4,7 +4,9 @@ import axios from 'axios';
 console.log('🔧 API 설정 정보:', {
   baseURL: import.meta.env.VITE_API_BASE_URL,
   hasAccessToken: !!import.meta.env.VITE_API_ACCESS_TOKEN,
-  currentDomain: window.location.hostname
+  currentDomain: window.location.hostname,
+  currentOrigin: window.location.origin,
+  userAgent: navigator.userAgent
 });
 
 const axiosInstance = axios.create({
@@ -23,7 +25,9 @@ axiosInstance.interceptors.request.use(
       url: config.url,
       baseURL: config.baseURL,
       fullURL: `${config.baseURL}${config.url}`,
-      withCredentials: config.withCredentials
+      withCredentials: config.withCredentials,
+      headers: config.headers,
+      data: config.data
     });
     return config;
   },
