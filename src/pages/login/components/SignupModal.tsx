@@ -46,6 +46,16 @@ const SignupModal: React.FC<ModalProps> = ({ onClose }) => {
     }
 
     console.log('회원가입 시도:', { nickname: name });
+    
+    // 회원가입 전 세션 상태 확인
+    try {
+      const sessionCheck = await axiosInstance.get('/api/permit/user-info', {
+        withCredentials: true,
+      });
+      console.log('회원가입 전 세션 상태:', sessionCheck.data);
+    } catch (error) {
+      console.log('회원가입 전 세션 확인 실패:', error);
+    }
 
     try {
       const response = await RequestSignUp(name);

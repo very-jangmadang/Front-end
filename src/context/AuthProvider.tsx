@@ -91,6 +91,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // 로그아웃 함수
   const logout = async () => {
     console.log('로그아웃 시작');
+    console.log('로그아웃 전 세션 상태 확인');
+    
+    // 로그아웃 전 세션 상태 확인
+    try {
+      const sessionCheck = await axiosInstance.get('/api/permit/user-info', {
+        withCredentials: true,
+      });
+      console.log('로그아웃 전 세션 상태:', sessionCheck.data);
+    } catch (error) {
+      console.log('로그아웃 전 세션 확인 실패:', error);
+    }
+    
     setIsLoggingOut(true); // 로그아웃 시작
     
     try {
@@ -100,9 +112,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         {},
         { 
           withCredentials: true,
-          headers: {
-            'Content-Type': 'application/json',
-          },
         },
       );
       if (response.status===200) {
