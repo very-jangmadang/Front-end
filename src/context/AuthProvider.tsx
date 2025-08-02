@@ -11,36 +11,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // 로그인 함수
   const login = async (retryCount = 0) => {
-    // 로그아웃 중이거나 로그아웃 상태가 저장되어 있으면 로그인 체크하지 않음
-    if (isLoggingOut || localStorage.getItem('isLoggingOut') === 'true') {
+    // 로그아웃 중이면 로그인 체크하지 않음
+    if (isLoggingOut) {
       console.log('로그아웃 중이므로 로그인 체크 건너뜀');
       return;
-    }
-
-    // 로그아웃 후 강제로 인증 상태를 false로 유지
-    const forceLogout = localStorage.getItem('forceLogout') === 'true';
-    if (forceLogout) {
-      console.log('강제 로그아웃 상태 - 로그인 체크 건너뜀');
-      setIsAuthenticated(false);
-      return;
-    }
-
-    // 로그아웃 후 일정 시간(5분) 동안 서버 응답 무시
-    const logoutTimestamp = localStorage.getItem('logoutTimestamp');
-    if (logoutTimestamp) {
-      const timeSinceLogout = Date.now() - parseInt(logoutTimestamp);
-      const fiveMinutes = 5 * 60 * 1000; // 5분
-      
-      if (timeSinceLogout < fiveMinutes) {
-        console.log('로그아웃 후 5분 이내 - 서버 응답 무시');
-        setIsAuthenticated(false);
-        return;
-      } else {
-        // 5분이 지났으면 로그아웃 관련 데이터 정리
-        localStorage.removeItem('forceLogout');
-        localStorage.removeItem('logoutTimestamp');
-        console.log('로그아웃 후 5분 경과 - 정상 로그인 체크 시작');
-      }
     }
 
     try {
@@ -51,7 +25,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.log('API 응답 데이터: ', data);
       
       // 로그아웃 중이면 서버 응답을 무시
-      if (isLoggingOut || localStorage.getItem('isLoggingOut') === 'true') {
+      if (isLoggingOut) {
         console.log('로그아웃 중이므로 서버 응답 무시');
         return;
       }
@@ -93,13 +67,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // 수동 로그아웃 상태 초기화 함수
+  const clearLogoutState = () => {
+    console.log('수동으로 로그아웃 상태 초기화');
+    setIsLoggingOut(false);
+  };
+
   // 로그아웃 함수
   const logout = async () => {
     console.log('로그아웃 시작');
     setIsLoggingOut(true); // 로그아웃 시작
-    localStorage.setItem('isLoggingOut', 'true'); // localStorage에 로그아웃 상태 저장
-    localStorage.setItem('forceLogout', 'true'); // 강제 로그아웃 플래그 설정
-    localStorage.setItem('logoutTimestamp', Date.now().toString()); // 로그아웃 시간 기록
     
     try {
       console.log('서버 로그아웃 요청 시작');
@@ -137,12 +114,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setIsAuthenticated(false);
         console.log('인증 상태를 false로 설정');
         
-        // 로그아웃 완료 후 홈으로 이동 (새로고침 없이)
+        // 로그아웃 완료 후 홈으로 이동
         setTimeout(() => {
           console.log('로그아웃 완료 - 홈으로 이동');
           setIsLoggingOut(false);
-          localStorage.removeItem('isLoggingOut'); // localStorage에서 로그아웃 상태 제거
-          // forceLogout은 유지하여 서버 응답을 무시
           window.location.href = '/';
         }, 1000);
       }
@@ -175,12 +150,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsAuthenticated(false);
       console.log('에러 발생 시에도 인증 상태를 false로 설정');
       
-      // 에러 발생 시에도 홈으로 이동 (새로고침 없이)
+      // 에러 발생 시에도 홈으로 이동
       setTimeout(() => {
         console.log('에러 발생 시에도 로그아웃 완료 - 홈으로 이동');
         setIsLoggingOut(false);
-        localStorage.removeItem('isLoggingOut'); // localStorage에서 로그아웃 상태 제거
-        // forceLogout은 유지하여 서버 응답을 무시
         window.location.href = '/';
       }, 1000);
     };
@@ -216,35 +189,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // 앱 로드 시 로그인 상태 체크
   useEffect(() => {
-    // 로그아웃 상태가 저장되어 있으면 로그인 체크하지 않음
-    const isLoggingOutStored = localStorage.getItem('isLoggingOut') === 'true';
-    const forceLogoutStored = localStorage.getItem('forceLogout') === 'true';
-    const logoutTimestamp = localStorage.getItem('logoutTimestamp');
-    
-    // 로그아웃 후 5분 이내인지 확인
-    let isWithinLogoutWindow = false;
-    if (logoutTimestamp) {
-      const timeSinceLogout = Date.now() - parseInt(logoutTimestamp);
-      const fiveMinutes = 5 * 60 * 1000; // 5분
-      isWithinLogoutWindow = timeSinceLogout < fiveMinutes;
-    }
-    
-    if (!isLoggingOutStored && !forceLogoutStored && !isWithinLogoutWindow) {
-      console.log('앱 초기화 - 로그인 상태 체크 시작');
-      login();
-    } else {
-      console.log('저장된 로그아웃 상태로 인해 로그인 체크 건너뜀');
-      if (isLoggingOutStored) {
-        localStorage.removeItem('isLoggingOut'); // 초기화 시 제거
-      }
-      if (forceLogoutStored && !isWithinLogoutWindow) {
-        localStorage.removeItem('forceLogout'); // 5분이 지났으면 제거
-      }
-      if (logoutTimestamp && !isWithinLogoutWindow) {
-        localStorage.removeItem('logoutTimestamp'); // 5분이 지났으면 제거
-      }
-      setIsAuthenticated(false);
-    }
+    console.log('앱 초기화 - 로그인 상태 체크 시작');
+    login();
   }, []);
 
   useEffect(() => {
@@ -255,6 +201,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     isAuthenticated,
     login,
     logout,
+    clearLogoutState, // 수동 초기화 함수 추가
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

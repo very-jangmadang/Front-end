@@ -108,7 +108,19 @@ app.post('/api/permit/nickname', (req, res) => {
 ### 7. 로그아웃 문제 해결
 - 클라이언트 측 쿠키 삭제 로직 추가
 - 로그아웃 후 자동 로그인 방지
-- 5분간 서버 응답 무시 로직 추가
+- 간단한 로그아웃 상태 관리
+
+#### 7.1 로그아웃 상태 수동 초기화
+로그아웃 후 로그인이 안 되는 경우, 브라우저 개발자 도구 콘솔에서 다음 명령어를 실행하세요:
+
+```javascript
+// 방법 1: 페이지 새로고침
+window.location.reload();
+
+// 방법 2: AuthContext 함수 사용 (컴포넌트 내에서)
+// const { clearLogoutState } = useAuth();
+// clearLogoutState();
+```
 
 ## SVG 파일 최적화 권장사항
 
