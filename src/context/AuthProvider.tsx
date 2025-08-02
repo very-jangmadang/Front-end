@@ -30,6 +30,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
       
+      // 크로스 도메인 쿠키 디버깅
+      console.log('현재 도메인 정보:', {
+        currentDomain: window.location.hostname,
+        currentOrigin: window.location.origin,
+        apiDomain: import.meta.env.VITE_API_BASE_URL,
+        cookies: document.cookie,
+        hasCredentials: true
+      });
+      
       // 백엔드 응답 형식에 맞춰서 처리
       if (data && data.isSuccess) {
         if (data.result === 'user') {

@@ -22,8 +22,58 @@ VITE_API_ACCESS_TOKEN=your_access_token_here
 
 **중요**: 환경 변수 설정 후 반드시 재배포해야 합니다!
 
-### 2. 백엔드 CORS 설정
+#### 환경 변수 확인 방법
+브라우저 콘솔에서 다음을 확인하세요:
+```javascript
+console.log('API 설정 정보:', {
+  baseURL: import.meta.env.VITE_API_BASE_URL,
+  hasAccessToken: !!import.meta.env.VITE_API_ACCESS_TOKEN
+});
+```
+
+`hasAccessToken: false`가 나오면 환경 변수가 설정되지 않은 것입니다.
+
+#### 문제 해결
+- 환경 변수 설정 후 **Redeploy** 필수
+- Production 환경에서만 설정하면 Preview/Development에서 작동하지 않음
+- 모든 환경(Production, Preview, Development)에 설정 필요
+
+### 2. 백엔드 CORS 설정 (중요!)
 백엔드에서 `jmd-fe.vercel.app` 도메인을 허용하도록 CORS 설정을 업데이트해야 합니다.
+
+#### Express.js CORS 설정 예시
+```javascript
+const cors = require('cors');
+
+app.use(cors({
+  origin: [
+    'https://jmd-fe.vercel.app',
+    'https://www.jmd-fe.vercel.app',
+    'http://localhost:5173' // 개발 환경
+  ],
+  credentials: true, // 쿠키 전송 허용
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
+```
+
+#### 세션 설정 (중요!)
+```javascript
+const session = require('express-session');
+
+app.use(session({
+  secret: 'your-secret-key',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    secure: true, // HTTPS에서만
+    sameSite: 'none', // 크로스 도메인 허용
+    domain: '.jangmadang.site', // 서브도메인 포함
+    maxAge: 24 * 60 * 60 * 1000 // 24시간
+  }
+}));
+```
 
 ### 3. 카카오 로그인 리다이렉트 URL 변경
 카카오 개발자 콘솔에서 리다이렉트 URL을 `https://jmd-fe.vercel.app/kakao`로 변경해야 합니다.

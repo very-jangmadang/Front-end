@@ -6,7 +6,9 @@ console.log('API 설정 정보:', {
   hasAccessToken: !!import.meta.env.VITE_API_ACCESS_TOKEN,
   currentDomain: window.location.hostname,
   currentOrigin: window.location.origin,
-  userAgent: navigator.userAgent
+  userAgent: navigator.userAgent,
+  cookies: document.cookie,
+  isSecure: window.location.protocol === 'https:'
 });
 
 const axiosInstance = axios.create({
