@@ -67,8 +67,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       );
       if (response.status===200) {
         console.log('로그아웃 성공:', response);
+        
+        // 클라이언트 측 쿠키도 삭제
+        document.cookie.split(";").forEach(function(c) { 
+          document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+        });
+        
         setIsAuthenticated(false);
-        window.location.replace('/');
+        
+        // 로그아웃 후 자동 로그인 방지를 위해 잠시 대기
+        setTimeout(() => {
+          window.location.replace('/');
+        }, 100);
       }
     } catch (error: any) {
       if (error.response) {
@@ -80,6 +90,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } else {
         console.error('로그아웃 중 에러 발생:', error);
       }
+      
+      // 에러가 발생해도 클라이언트 측 쿠키 삭제 및 로그아웃 처리
+      document.cookie.split(";").forEach(function(c) { 
+        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+      });
+      setIsAuthenticated(false);
+      window.location.replace('/');
     };
   };
 

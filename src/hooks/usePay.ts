@@ -39,7 +39,7 @@ const usePay = () => {
         Cookies.set('tid', tid, {
           expires: 1,
           path: '/', // 전체 경로에서 쿠키 유효
-          domain: 'jangmadang.site', // www.jangmadang.site와 api.jangmadang.site에서 쿠키 공유
+          domain: window.location.hostname, // 현재 도메인에 맞게 동적 설정
           secure: true, // HTTPS에서만 쿠키 유효
           sameSite: 'Lax', // SameSite 설정 변경 (보안을 위해 Lax로 설정)
         });

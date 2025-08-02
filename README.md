@@ -1,5 +1,25 @@
 # JMD-FE
 
+## 도메인 변경 후 설정 가이드
+
+도메인이 `jangmadang.site`에서 `jmd-fe.vercel.app`으로 변경된 후 필요한 설정:
+
+### 1. Vercel 환경 변수 설정
+Vercel 대시보드에서 다음 환경 변수를 설정해야 합니다:
+
+```bash
+VITE_API_BASE_URL=https://api.jangmadang.site  # 또는 새로운 API 서버 주소
+VITE_API_ACCESS_TOKEN=your_access_token
+```
+
+### 2. 쿠키 도메인 설정
+- 쿠키 도메인이 동적으로 설정되도록 수정 완료
+- `window.location.hostname`을 사용하여 현재 도메인에 맞게 자동 설정
+
+### 3. 로그아웃 문제 해결
+- 클라이언트 측 쿠키 삭제 로직 추가
+- 로그아웃 후 자동 로그인 방지
+
 ## SVG 파일 최적화 권장사항
 
 큰 SVG 파일들(`promotion1.svg`, `promotion2.svg`, `promotion3.svg`)이 Babel 경고를 발생시킬 수 있습니다. 
