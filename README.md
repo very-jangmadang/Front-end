@@ -28,7 +28,7 @@ VITE_API_ACCESS_TOKEN=your_access_token_here
 ### 3. 카카오 로그인 리다이렉트 URL 변경
 카카오 개발자 콘솔에서 리다이렉트 URL을 `https://jmd-fe.vercel.app/kakao`로 변경해야 합니다.
 
-### 4. 백엔드 API 변경사항
+### 4. 백엔드 API 변경사항 (세션 방식 유지)
 
 #### 카카오 로그인 리다이렉트 변경
 ```javascript
@@ -36,39 +36,17 @@ VITE_API_ACCESS_TOKEN=your_access_token_here
 res.redirect('https://jangmadang.site/kakao');
 
 // 변경
-res.redirect('https://jmd-fe.vercel.app/kakao?token=JWT_TOKEN&email=USER_EMAIL&isNewUser=true/false');
+res.redirect('https://jmd-fe.vercel.app/kakao');
 ```
 
-#### 새로운 API 추가
-```javascript
-// POST /api/permit/set-cookie
-// 토큰을 받아서 쿠키로 설정 (200 응답)
-app.post('/api/permit/set-cookie', (req, res) => {
-  const { token } = req.body;
-  // 토큰을 쿠키로 설정
-  res.cookie('accessToken', token, {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'none',
-    domain: '.jangmadang.site'
-  });
-  res.json({ isSuccess: true, code: 'COMMON_200', message: '쿠키 설정 완료' });
-});
-```
-
-#### 닉네임 설정 API 수정
-```javascript
-// 기존: 세션에서 이메일 추출
-const email = req.session.oauthemail;
-
-// 변경: request body에서 이메일 받기
-const { nickname, email } = req.body;
-```
+#### 세션 방식 유지
+- 기존 세션 기반 인증 방식 그대로 유지
+- 쿠키를 통한 세션 관리 계속 사용
+- 크로스 도메인 쿠키 설정 확인 필요
 
 ### 5. 프론트엔드 변경사항
-- `KakaoRedirect.tsx`: URL 파라미터에서 token, email 추출 후 `/api/permit/set-cookie` 호출
-- `SignupModal.tsx`: 이메일을 request body에 포함하여 전송
 - 쿠키 도메인을 `window.location.hostname`으로 동적 설정
+- 세션 기반 인증 방식 유지
 
 ### 6. 환경 변수 확인 방법
 브라우저 콘솔에서 다음을 확인하세요:
@@ -80,6 +58,18 @@ console.log('API 설정 정보:', {
 ```
 
 `hasAccessToken: false`가 나오면 환경 변수가 설정되지 않은 것입니다.
+
+### 7. 크로스 도메인 쿠키 설정
+백엔드에서 다음 설정을 확인하세요:
+```javascript
+// 쿠키 설정
+res.cookie('sessionId', sessionId, {
+  httpOnly: true,
+  secure: true,
+  sameSite: 'none',
+  domain: '.jangmadang.site' // 또는 적절한 도메인
+});
+```
 
 ### 6. 회원가입 문제 디버깅
 회원가입이 안 되는 경우 브라우저 개발자 도구 콘솔에서 다음을 확인하세요:

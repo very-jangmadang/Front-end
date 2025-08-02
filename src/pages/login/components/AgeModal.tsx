@@ -13,10 +13,9 @@ import { Icon } from '@iconify/react';
 
 interface ModalProps {
   onClose: () => void;
-  email?: string | null;
 }
 
-const AgeModal: React.FC<ModalProps> = ({ onClose, email }) => {
+const AgeModal: React.FC<ModalProps> = ({ onClose }) => {
   const [checked, setChecked] = React.useState([false, false]);
   const { openModal } = useModalContext();
   const [isLargeScreen, setIsLargeScreen] = useState<boolean>(() =>
@@ -49,7 +48,7 @@ const AgeModal: React.FC<ModalProps> = ({ onClose, email }) => {
 
   const handleOpenNextModal = () => {
     if (checked[0]) {
-      openModal(({ onClose }) => <SignupModal onClose={onClose} email={email} />);
+      openModal(({ onClose }) => <SignupModal onClose={onClose} />);
     } else if (checked[1]) {
       openModal(({ onClose }) => <UnderAgeModal onClose={onClose} />);
     } else {

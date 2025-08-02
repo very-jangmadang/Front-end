@@ -85,7 +85,7 @@ const GetExchangeHistory = async (period: string) => {
   }
 };
 
-// SetCookie 함수 제거 - KakaoRedirect에서 직접 axiosInstance 사용
+// SetCookie 함수 제거 - 세션 방식으로 되돌림
 
 export {
   GetMyTicket,

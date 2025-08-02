@@ -11,19 +11,10 @@ import { AxiosError } from 'axios';
 
 interface ModalProps {
   onClose: () => void;
-  email?: string | null;
 }
 
-const RequestSignUp = async (nickname: string, email: string | null) => {
-  const requestBody: any = { nickname };
-  
-  // 이메일이 있으면 request body에 추가 (세션 대신 직접 전달)
-  if (email) {
-    requestBody.email = email;
-    console.log('이메일을 request body에 포함하여 전송:', email);
-  } else {
-    console.log('이메일 정보가 없습니다');
-  }
+const RequestSignUp = async (nickname: string) => {
+  const requestBody = { nickname };
   
   console.log('회원가입 요청 데이터:', requestBody);
   
@@ -33,7 +24,7 @@ const RequestSignUp = async (nickname: string, email: string | null) => {
   return response.data;
 };
 
-const SignupModal: React.FC<ModalProps> = ({ onClose, email }) => {
+const SignupModal: React.FC<ModalProps> = ({ onClose }) => {
   const { openModal } = useModalContext();
   const [isError, setIsError] = useState('');
   const [name, setName] = useState('');
@@ -54,13 +45,14 @@ const SignupModal: React.FC<ModalProps> = ({ onClose, email }) => {
       return;
     }
 
-    console.log('회원가입 시도:', { nickname: name, email });
+    console.log('회원가입 시도:', { nickname: name });
 
     try {
-      const response = await RequestSignUp(name, email || null);
+      const response = await RequestSignUp(name);
       console.log('회원가입 성공:', response);
 
-      if (response.code === 'COMMON_200') {
+      // 백엔드 응답 형식에 맞춰서 처리
+      if (response.isSuccess && response.code === 'COMMON_200') {
         setIsError('');
         openModal(({ onClose }) => <EnterModal onClose={onClose} />);
       } else if (response.code === 'USER_4008') {
@@ -68,7 +60,7 @@ const SignupModal: React.FC<ModalProps> = ({ onClose, email }) => {
         setIsError('중복된 닉네임입니다');
       } else {
         console.log('예상치 못한 응답 코드:', response.code);
-        setIsError('');
+        setIsError(response.message || '회원가입 중 오류가 발생했습니다.');
       }
     } catch (err) {
       console.error('회원가입 에러:', err);
@@ -88,14 +80,15 @@ const SignupModal: React.FC<ModalProps> = ({ onClose, email }) => {
         });
         
         if (error.response.status === 400) {
-          const errorCode = error.response.data?.code;
+          const errorData = error.response.data;
+          const errorCode = errorData?.code;
 
           if (errorCode === 'USER_4008') {
             console.log('닉네임 중복');
             setIsError('중복된 닉네임입니다');
           } else {
             console.log('400 에러 - 알 수 없는 코드:', errorCode);
-            setIsError(`회원가입 실패: ${error.response.data?.message || '알 수 없는 오류'}`);
+            setIsError(errorData?.message || '회원가입 실패: 알 수 없는 오류');
           }
         } else if (error.response.status === 401) {
           console.log('인증 실패 - 로그인이 필요합니다');
@@ -108,7 +101,8 @@ const SignupModal: React.FC<ModalProps> = ({ onClose, email }) => {
           setIsError('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
         } else {
           console.log('기타 HTTP 에러:', error.response.status);
-          setIsError(`서버 오류 (${error.response.status}): ${error.response.data?.message || '알 수 없는 오류'}`);
+          const errorData = error.response.data;
+          setIsError(`서버 오류 (${error.response.status}): ${errorData?.message || '알 수 없는 오류'}`);
         }
       } else if (error.request) {
         console.error('네트워크 에러:', {
