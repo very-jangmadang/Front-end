@@ -64,6 +64,9 @@ const FollowingList: React.FC = () => {
 
         const response = await axiosInstance.delete(
           `/api/member/follow/cancel?storeId=${storeId}`,
+          {
+            withCredentials: true
+          }
         );
 
         if (response.data.isSuccess) {

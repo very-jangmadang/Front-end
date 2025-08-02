@@ -2,5 +2,18 @@
   "generatorOpts": {
     "compact": false,
     "maxSize": 1000000
-  }
+  },
+  "env": {
+    "development": {
+      "compact": false
+    },
+    "production": {
+      "compact": true
+    }
+  },
+  "ignore": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/build/**"
+  ]
 } 

@@ -19,6 +19,10 @@ const CancleModal: React.FC<ModalProps> = ({ onClose, raffleId }) => {
     try {
       const { data } = await axiosInstance.post(
         `/api/member/raffles/${raffleId}/cancel`,
+        {},
+        {
+          withCredentials: true
+        }
       );
       openModal(({ onClose }) => (
         <CancelOkModal onClose={onClose} raffleId={raffleId} />

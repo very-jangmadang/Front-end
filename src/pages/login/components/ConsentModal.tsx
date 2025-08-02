@@ -12,6 +12,7 @@ import { Icon } from '@iconify/react';
 
 interface ModalProps {
   onClose: () => void;
+  email?: string | null;
 }
 
 const ConsentModal: React.FC<ModalProps> = ({ onClose }) => {

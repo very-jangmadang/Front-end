@@ -85,6 +85,16 @@ const GetExchangeHistory = async (period: string) => {
   }
 };
 
+// 쿠키 설정 API
+export const SetCookie = async (token: string) => {
+  const response = await axiosInstance.post('/api/permit/set-cookie', {
+    token: token
+  }, {
+    withCredentials: true
+  });
+  return response.data;
+};
+
 export {
   GetMyTicket,
   PostCharge,

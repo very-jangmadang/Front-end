@@ -1,14 +1,52 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
 import media from '../../../styles/media';
-import promotion1 from '../../../assets/homePage/promotion1.svg';
-import promotion2 from '../../../assets/homePage/promotion2.svg';
-import promotion3 from '../../../assets/homePage/promotion3.svg';
+
+// 로딩 스피너 컴포넌트
+const LoadingSpinner = () => (
+  <div style={{ 
+    display: 'flex', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    height: '369px',
+    backgroundColor: '#f5f5f5'
+  }}>
+    <div>로딩 중...</div>
+  </div>
+);
 
 function AdBanner() {
+  const [images, setImages] = useState<{ [key: string]: string }>({});
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // SVG 파일들을 동적으로 로드
+    const loadImages = async () => {
+      try {
+        const [promotion1, promotion2, promotion3] = await Promise.all([
+          import('../../../assets/homePage/promotion1.svg'),
+          import('../../../assets/homePage/promotion2.svg'),
+          import('../../../assets/homePage/promotion3.svg')
+        ]);
+
+        setImages({
+          promotion1: promotion1.default,
+          promotion2: promotion2.default,
+          promotion3: promotion3.default
+        });
+      } catch (error) {
+        console.error('이미지 로딩 실패:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadImages();
+  }, []);
+
   const settings = {
     dots: true,
     infinite: true,
@@ -39,22 +77,30 @@ function AdBanner() {
     ],
   };
 
+  if (isLoading) {
+    return (
+      <Wrapper>
+        <LoadingSpinner />
+      </Wrapper>
+    );
+  }
+
   return (
     <Wrapper>
       <Slider {...settings}>
         <div>
           <AdBox>
-            <AdImage src={promotion3} alt="프로모션 3" />
+            <AdImage src={images.promotion3} alt="프로모션 3" />
           </AdBox>
         </div>
         <div>
           <AdBox>
-            <AdImage src={promotion1} alt="프로모션 1" />
+            <AdImage src={images.promotion1} alt="프로모션 1" />
           </AdBox>
         </div>
         <div>
           <AdBox>
-            <AdImage src={promotion2} alt="프로모션 2" />
+            <AdImage src={images.promotion2} alt="프로모션 2" />
           </AdBox>
         </div>
       </Slider>

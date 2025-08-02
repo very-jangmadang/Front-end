@@ -11,18 +11,24 @@ import { AxiosError } from 'axios';
 
 interface ModalProps {
   onClose: () => void;
+  email?: string | null;
 }
 
-const RequestSignUp = async (nickname: string) => {
-  const response = await axiosInstance.post('/api/permit/nickname', {
-    nickname,
-  }, {
+const RequestSignUp = async (nickname: string, email: string | null) => {
+  const requestBody: any = { nickname };
+  
+  // 이메일이 있으면 request body에 추가
+  if (email) {
+    requestBody.email = email;
+  }
+  
+  const response = await axiosInstance.post('/api/permit/nickname', requestBody, {
     withCredentials: true
   });
   return response.data;
 };
 
-const SignupModal: React.FC<ModalProps> = ({ onClose }) => {
+const SignupModal: React.FC<ModalProps> = ({ onClose, email }) => {
   const { openModal } = useModalContext();
   const [isError, setIsError] = useState('');
   const [name, setName] = useState('');
@@ -44,7 +50,7 @@ const SignupModal: React.FC<ModalProps> = ({ onClose }) => {
     }
 
     try {
-      const response = await RequestSignUp(name);
+      const response = await RequestSignUp(name, email || null);
 
       if (response.code === 'COMMON_200') {
         setIsError('');

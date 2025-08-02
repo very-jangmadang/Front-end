@@ -20,6 +20,7 @@ const useFollow = (initialFollowStatus: boolean, storeId: number) => {
       if (prev) {
         await axiosInstance.delete('/api/member/follow/cancel', {
           params: { storeId },
+          withCredentials: true
         });
       } else {
         await axiosInstance.post(
@@ -27,6 +28,7 @@ const useFollow = (initialFollowStatus: boolean, storeId: number) => {
           {},
           {
             params: { storeId },
+            withCredentials: true
           },
         );
       }

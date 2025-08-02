@@ -26,6 +26,9 @@ const GiveUpModal: React.FC<ModalProps> = ({
       await axiosInstance.post(
         `/api/member/delivery/${deliveryId}/winner/cancel`,
         {},
+        {
+          withCredentials: true
+        }
       );
       setDeliveryStatus('CANCELLED');
       openModal(({ onClose }) => <GiveUpOkModal onClose={onClose} />);

@@ -31,7 +31,11 @@ const NameEditModal: React.FC<ModalProps> = ({ currentNickname, onClose, onNickn
       console.log("닉네임 변경 요청 데이터:", name);
   
       const response = await axiosInstance.patch(
-        `/api/member/mypage/nickname?nickname=${encodeURIComponent(name)}`
+        `/api/member/mypage/nickname?nickname=${encodeURIComponent(name)}`,
+        {},
+        {
+          withCredentials: true
+        }
       );
   
       console.log("닉네임 변경 응답:", response.data);
