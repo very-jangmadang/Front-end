@@ -7,9 +7,16 @@ const MAX_RETRIES = 1; // 재시도 횟수를 제한 (예: 1번)
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false); // 로그아웃 플래그 추가
 
   // 로그인 함수
   const login = async (retryCount = 0) => {
+    // 로그아웃 중이거나 로그아웃 상태가 저장되어 있으면 로그인 체크하지 않음
+    if (isLoggingOut || localStorage.getItem('isLoggingOut') === 'true') {
+      console.log('로그아웃 중이므로 로그인 체크 건너뜀');
+      return;
+    }
+
     try {
       const { data } = await axiosInstance.get('/api/permit/user-info', {
         withCredentials: true,
@@ -54,6 +61,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // 로그아웃 함수
   const logout = async () => {
+    setIsLoggingOut(true); // 로그아웃 시작
+    localStorage.setItem('isLoggingOut', 'true'); // localStorage에 로그아웃 상태 저장
+    
     try {
       const response = await axiosInstance.post(
         '/api/permit/logout',
@@ -75,10 +85,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         setIsAuthenticated(false);
         
-        // 로그아웃 후 자동 로그인 방지를 위해 잠시 대기
+        // 로그아웃 완료 후 플래그 리셋 및 홈으로 이동
         setTimeout(() => {
+          setIsLoggingOut(false);
+          localStorage.removeItem('isLoggingOut'); // localStorage에서 로그아웃 상태 제거
           window.location.replace('/');
-        }, 100);
+        }, 500);
       }
     } catch (error: any) {
       if (error.response) {
@@ -96,7 +108,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
       });
       setIsAuthenticated(false);
-      window.location.replace('/');
+      
+      // 에러 발생 시에도 플래그 리셋 및 홈으로 이동
+      setTimeout(() => {
+        setIsLoggingOut(false);
+        localStorage.removeItem('isLoggingOut'); // localStorage에서 로그아웃 상태 제거
+        window.location.replace('/');
+      }, 500);
     };
   };
 
@@ -130,7 +148,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // 앱 로드 시 로그인 상태 체크
   useEffect(() => {
-    login();
+    // 로그아웃 상태가 저장되어 있으면 로그인 체크하지 않음
+    const isLoggingOutStored = localStorage.getItem('isLoggingOut') === 'true';
+    if (!isLoggingOutStored) {
+      login();
+    } else {
+      console.log('저장된 로그아웃 상태로 인해 로그인 체크 건너뜀');
+      localStorage.removeItem('isLoggingOut'); // 초기화 시 제거
+    }
   }, []);
 
   useEffect(() => {

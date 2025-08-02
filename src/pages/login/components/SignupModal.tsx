@@ -49,8 +49,11 @@ const SignupModal: React.FC<ModalProps> = ({ onClose, email }) => {
       return;
     }
 
+    console.log('🔍 회원가입 시도:', { nickname: name, email });
+
     try {
       const response = await RequestSignUp(name, email || null);
+      console.log('✅ 회원가입 성공:', response);
 
       if (response.code === 'COMMON_200') {
         setIsError('');
@@ -59,9 +62,12 @@ const SignupModal: React.FC<ModalProps> = ({ onClose, email }) => {
         console.log('닉네임 중복');
         setIsError('중복된 닉네임입니다');
       } else {
+        console.log('⚠️ 예상치 못한 응답 코드:', response.code);
         setIsError('');
       }
     } catch (err) {
+      console.error('❌ 회원가입 에러:', err);
+      
       const error = err as AxiosError<{
         isSuccess: boolean;
         code: string;
@@ -69,6 +75,13 @@ const SignupModal: React.FC<ModalProps> = ({ onClose, email }) => {
       }>;
 
       if (error.response) {
+        console.error('📡 서버 응답 에러:', {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data,
+          headers: error.response.headers
+        });
+        
         if (error.response.status === 400) {
           const errorCode = error.response.data?.code;
 
@@ -76,13 +89,34 @@ const SignupModal: React.FC<ModalProps> = ({ onClose, email }) => {
             console.log('닉네임 중복');
             setIsError('중복된 닉네임입니다');
           } else {
-            setIsError('');
+            console.log('⚠️ 400 에러 - 알 수 없는 코드:', errorCode);
+            setIsError(`회원가입 실패: ${error.response.data?.message || '알 수 없는 오류'}`);
           }
+        } else if (error.response.status === 401) {
+          console.log('🔐 인증 실패 - 로그인이 필요합니다');
+          setIsError('로그인이 필요합니다. 다시 로그인해주세요.');
+        } else if (error.response.status === 403) {
+          console.log('🚫 권한 없음');
+          setIsError('권한이 없습니다.');
+        } else if (error.response.status === 500) {
+          console.log('💥 서버 내부 오류');
+          setIsError('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
         } else {
-          setIsError('');
+          console.log('⚠️ 기타 HTTP 에러:', error.response.status);
+          setIsError(`서버 오류 (${error.response.status}): ${error.response.data?.message || '알 수 없는 오류'}`);
         }
+      } else if (error.request) {
+        console.error('🌐 네트워크 에러:', {
+          request: error.request,
+          message: error.message
+        });
+        setIsError('네트워크 연결을 확인해주세요.');
       } else {
-        setIsError('');
+        console.error('❓ 기타 에러:', {
+          message: error.message,
+          stack: error.stack
+        });
+        setIsError('알 수 없는 오류가 발생했습니다.');
       }
     }
   };

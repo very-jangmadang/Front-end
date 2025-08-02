@@ -1,5 +1,12 @@
 import axios from 'axios';
 
+// 환경 변수 디버깅
+console.log('🔧 API 설정 정보:', {
+  baseURL: import.meta.env.VITE_API_BASE_URL,
+  hasAccessToken: !!import.meta.env.VITE_API_ACCESS_TOKEN,
+  currentDomain: window.location.hostname
+});
+
 const axiosInstance = axios.create({
   baseURL: `${import.meta.env.VITE_API_BASE_URL}`,
   headers: {
@@ -7,5 +14,44 @@ const axiosInstance = axios.create({
   },
   withCredentials: true,
 });
+
+// 요청 인터셉터 추가
+axiosInstance.interceptors.request.use(
+  (config) => {
+    console.log('🚀 API 요청:', {
+      method: config.method,
+      url: config.url,
+      baseURL: config.baseURL,
+      fullURL: `${config.baseURL}${config.url}`,
+      withCredentials: config.withCredentials
+    });
+    return config;
+  },
+  (error) => {
+    console.error('❌ API 요청 에러:', error);
+    return Promise.reject(error);
+  }
+);
+
+// 응답 인터셉터 추가
+axiosInstance.interceptors.response.use(
+  (response) => {
+    console.log('✅ API 응답:', {
+      status: response.status,
+      url: response.config.url,
+      data: response.data
+    });
+    return response;
+  },
+  (error) => {
+    console.error('❌ API 응답 에러:', {
+      status: error.response?.status,
+      url: error.config?.url,
+      data: error.response?.data,
+      message: error.message
+    });
+    return Promise.reject(error);
+  }
+);
 
 export default axiosInstance;
