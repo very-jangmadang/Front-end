@@ -16,6 +16,8 @@ interface ModalProps {
 const RequestSignUp = async (nickname: string) => {
   const response = await axiosInstance.post('/api/permit/nickname', {
     nickname,
+  }, {
+    withCredentials: true
   });
   return response.data;
 };
