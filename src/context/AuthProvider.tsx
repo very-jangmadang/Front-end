@@ -1,6 +1,7 @@
 import { useState, useEffect, ReactNode } from 'react';
 import { AuthContext, AuthContextType } from './AuthContext';
 import axiosInstance from '../apis/axiosInstance';
+import { clearAllCookies, clearSpecificCookies, checkDomainAndCookies, showCookieDebugInfo } from '../utils/cookieUtils';
 
 const MAX_RETRIES = 1; // 재시도 횟수를 제한 (예: 1번)
 
@@ -90,23 +91,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // 로그아웃 함수
   const logout = async () => {
-    console.log('로그아웃 시작');
-    console.log('로그아웃 전 세션 상태 확인');
-    
-    // 로그아웃 전 세션 상태 확인
-    try {
-      const sessionCheck = await axiosInstance.get('/api/permit/user-info', {
-        withCredentials: true,
-      });
-      console.log('로그아웃 전 세션 상태:', sessionCheck.data);
-    } catch (error) {
-      console.log('로그아웃 전 세션 확인 실패:', error);
-    }
+    console.log('=== 강력한 로그아웃 시작 ===');
+    checkDomainAndCookies(); // 로그아웃 전 상태 확인
+    showCookieDebugInfo(); // 디버깅 안내
     
     setIsLoggingOut(true); // 로그아웃 시작
     
+    // 1단계: 서버 로그아웃 요청
     try {
-      console.log('서버 로그아웃 요청 시작');
+      console.log('1단계: 서버 로그아웃 요청 시작');
       const response = await axiosInstance.post(
         '/api/permit/logout',
         {},
@@ -114,54 +107,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           withCredentials: true,
         },
       );
-      if (response.status===200) {
-        console.log('서버 로그아웃 성공:', response);
-        
-        // 백엔드 응답 형식 확인
-        const responseData = response.data;
-        console.log('로그아웃 응답 데이터:', responseData);
-        
-        if (responseData && responseData.isSuccess) {
-          console.log('로그아웃 성공:', responseData.message);
-        } else {
-          console.warn('로그아웃 응답 형식 이상:', responseData);
-        }
-        
-        // 클라이언트 측 쿠키 삭제
-        console.log('로그아웃 전 쿠키:', document.cookie);
-        
-        // 모든 쿠키 삭제
-        const cookies = document.cookie.split(";");
-        console.log('삭제할 쿠키 목록:', cookies);
-        
-        cookies.forEach(function(cookie) {
-          const eqPos = cookie.indexOf("=");
-          const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
-          console.log('쿠키 삭제:', name);
-          
-          // 다양한 도메인과 경로로 쿠키 삭제
-          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;`;
-          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${window.location.hostname};`;
-          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.${window.location.hostname};`;
-        });
-        
-        console.log('로그아웃 후 쿠키:', document.cookie);
-        
-        setIsAuthenticated(false);
-        console.log('인증 상태를 false로 설정');
-        
-        // 로그아웃 완료 후 홈으로 이동
-        setTimeout(() => {
-          console.log('로그아웃 완료 - 홈으로 이동');
-          setIsLoggingOut(false);
-          // 서버 세션을 완전히 삭제하기 위해 강제 새로고침
-          window.location.reload();
-        }, 1000);
+      
+      console.log('서버 로그아웃 응답:', response);
+      
+      const responseData = response.data;
+      if (responseData && responseData.isSuccess) {
+        console.log('✅ 서버 로그아웃 성공:', responseData.message);
       } else {
-        console.warn('로그아웃 응답 상태 코드 이상:', response.status);
+        console.warn('⚠️ 로그아웃 응답 형식 이상:', responseData);
       }
+      
     } catch (error: any) {
-      console.error('로그아웃 중 에러 발생:', error);
+      console.error('❌ 서버 로그아웃 중 에러 발생:', error);
       
       if (error.response) {
         console.error('서버 응답 에러:', {
@@ -172,31 +129,62 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } else {
         console.error('네트워크 에러:', error);
       }
+    }
+    
+    // 2단계: 클라이언트 측 강력한 쿠키 정리
+    console.log('2단계: 클라이언트 측 강력한 쿠키 정리 시작');
+    
+    // 모든 쿠키 삭제
+    clearAllCookies();
+    
+    // 인증 쿠키 특별 처리
+    console.log('3단계: 인증 쿠키 특별 삭제');
+    clearSpecificCookies(['access', 'refresh']);
+    
+    // 4단계: 추가 삭제 시도 (SameSite=None + Secure 문제 해결)
+    console.log('4단계: SameSite 문제 해결을 위한 추가 삭제');
+    const authCookies = ['access', 'refresh'];
+    authCookies.forEach(cookieName => {
+      // SameSite=None + Secure 설정으로 삭제 시도
+      const sameSiteOptions = [
+        `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure;`,
+        `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax;`,
+        `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Strict;`,
+      ];
       
-      // 에러가 발생해도 클라이언트 측 쿠키 삭제 및 로그아웃 처리
-      console.log('에러 발생 시 쿠키 삭제 시작');
-      const cookies = document.cookie.split(";");
-      cookies.forEach(function(cookie) {
-        const eqPos = cookie.indexOf("=");
-        const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
-        console.log('쿠키 삭제:', name);
-        
-        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;`;
-        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${window.location.hostname};`;
-        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.${window.location.hostname};`;
+      sameSiteOptions.forEach(option => {
+        try {
+          document.cookie = option;
+        } catch (error) {
+          console.warn(`SameSite 쿠키 삭제 실패 (${cookieName}):`, option, error);
+        }
       });
+    });
+    
+    // 5단계: 최종 상태 확인
+    console.log('5단계: 로그아웃 후 최종 쿠키 상태 확인');
+    checkDomainAndCookies();
+    
+    setIsAuthenticated(false);
+    console.log('✅ 인증 상태를 false로 설정');
+    
+    // 6단계: 완료 처리
+    setTimeout(() => {
+      console.log('✅ 강력한 로그아웃 완료 - 홈으로 이동');
+      setIsLoggingOut(false);
       
-      setIsAuthenticated(false);
-      console.log('에러 발생 시에도 인증 상태를 false로 설정');
+      // 브라우저 캐시도 함께 정리
+      if ('caches' in window) {
+        caches.keys().then(names => {
+          names.forEach(name => {
+            caches.delete(name);
+          });
+        });
+      }
       
-      // 에러 발생 시에도 홈으로 이동
-      setTimeout(() => {
-        console.log('에러 발생 시에도 로그아웃 완료 - 홈으로 이동');
-        setIsLoggingOut(false);
-        // 서버 세션을 완전히 삭제하기 위해 강제 새로고침
-        window.location.reload();
-      }, 1000);
-    };
+      // 강제 새로고침으로 완전한 상태 초기화
+      window.location.reload();
+    }, 1500); // 시간을 조금 더 늘려서 쿠키 삭제 완료 보장
   };
 
   // 리프레시 토큰 요청 함수

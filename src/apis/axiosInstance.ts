@@ -32,7 +32,8 @@ axiosInstance.interceptors.request.use(
       fullURL: `${config.baseURL}${config.url}`,
       withCredentials: config.withCredentials,
       headers: config.headers,
-      data: config.data
+      data: config.data,
+      cookies: document.cookie
     });
     return config;
   },
@@ -48,7 +49,9 @@ axiosInstance.interceptors.response.use(
     console.log('API 응답:', {
       status: response.status,
       url: response.config.url,
-      data: response.data
+      data: response.data,
+      responseHeaders: response.headers,
+      cookiesAfterResponse: document.cookie
     });
     return response;
   },

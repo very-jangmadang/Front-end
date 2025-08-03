@@ -8,6 +8,7 @@ import { useModalContext } from '../../../components/Modal/context/ModalContext'
 import { Icon } from '@iconify/react';
 import axiosInstance from '../../../apis/axiosInstance';
 import { AxiosError } from 'axios';
+import { logAllCookies, checkAuthCookies } from '../../../utils/cookieUtils';
 
 interface ModalProps {
   onClose: () => void;
@@ -47,6 +48,11 @@ const SignupModal: React.FC<ModalProps> = ({ onClose }) => {
 
     console.log('회원가입 시도:', { nickname: name });
     
+    // 회원가입 전 쿠키 상태 확인
+    console.log('회원가입 전 쿠키 상태:', document.cookie);
+    logAllCookies();
+    checkAuthCookies();
+    
     // 회원가입 전 세션 상태 확인
     try {
       const sessionCheck = await axiosInstance.get('/api/permit/user-info', {
@@ -64,7 +70,20 @@ const SignupModal: React.FC<ModalProps> = ({ onClose }) => {
       // 백엔드 응답 형식에 맞춰서 처리
       if (response.isSuccess && response.code === 'COMMON_200') {
         setIsError('');
-        openModal(({ onClose }) => <EnterModal onClose={onClose} />);
+        
+        // 쿠키 설정 확인
+        console.log('회원가입 후 쿠키 상태:', document.cookie);
+        logAllCookies();
+        checkAuthCookies();
+        
+        // 회원가입 성공 후 잠시 대기하여 쿠키가 설정되도록 함
+        setTimeout(() => {
+          console.log('지연 후 쿠키 상태:', document.cookie);
+          logAllCookies();
+          checkAuthCookies();
+          openModal(({ onClose }) => <EnterModal onClose={onClose} />);
+        }, 100);
+        
       } else if (response.code === 'USER_4008') {
         console.log('닉네임 중복');
         setIsError('중복된 닉네임입니다');

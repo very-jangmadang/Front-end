@@ -24,6 +24,7 @@ import Payment from '../pages/mypage/Payment';
 import WinnerPage from '../pages/winner/winnerPage';
 import UserProfilePage from '../pages/mypage/UserProfilePage';
 import PrivateRoute from '../services/PrivateRoute';
+import CookieDebugPage from '../pages/debug/CookieDebugPage';
 
 const router = createBrowserRouter([
   {
@@ -181,6 +182,10 @@ const router = createBrowserRouter([
       {
         path: 'ask/:type',
         element: <AskPage />,
+      },
+      {
+        path: 'debug/cookies',
+        element: <CookieDebugPage />,
       },
     ],
   },
