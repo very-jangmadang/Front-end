@@ -122,7 +122,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setIsAuthenticated(false);
         
         // 강제로 페이지 새로고침 (완전한 로그아웃)
-        window.location.href = '/';
+        // 백엔드 세션이 무효화되지 않는 문제를 해결하기 위해 더 강력한 방법 사용
+        setTimeout(() => {
+          // 1초 후 강제 새로고침
+          window.location.reload();
+        }, 1000);
       }
     } catch (error: any) {
       console.error('❌ 로그아웃 중 에러 발생:', error);
