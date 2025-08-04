@@ -84,6 +84,41 @@ export const checkDomainAndCookies = (): void => {
 };
 
 /**
+ * 현재 도메인에 맞는 쿠키만 삭제하는 함수
+ */
+export const clearCurrentDomainCookies = (): void => {
+  console.log('=== 현재 도메인 쿠키만 삭제 ===');
+  console.log('현재 도메인:', window.location.hostname);
+  
+  const cookies = document.cookie.split(';');
+  console.log('삭제할 쿠키 목록:', cookies);
+  
+  cookies.forEach(cookie => {
+    const [name] = cookie.trim().split('=');
+    if (name) {
+      console.log(`현재 도메인 쿠키 삭제: ${name}`);
+      
+      // 현재 도메인에 맞는 쿠키만 삭제
+      const deleteOptions = [
+        `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`,
+        `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${window.location.hostname};`,
+        `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.${window.location.hostname};`,
+      ];
+      
+      deleteOptions.forEach(option => {
+        try {
+          document.cookie = option;
+        } catch (error) {
+          console.warn(`쿠키 삭제 실패 (${name}):`, option, error);
+        }
+      });
+    }
+  });
+  
+  console.log('현재 도메인 쿠키 삭제 완료');
+};
+
+/**
  * 강력한 쿠키 삭제 함수 (SameSite=None + Secure 문제 해결)
  */
 export const clearAllCookies = (): void => {
@@ -193,4 +228,187 @@ export const showCookieDebugInfo = (): void => {
   console.log('현재 페이지 URL:', window.location.href);
   console.log('현재 도메인:', window.location.hostname);
   console.log('현재 프로토콜:', window.location.protocol);
+};
+
+/**
+ * 도메인별 쿠키 분리 상태 확인
+ */
+export const checkDomainSeparation = (): void => {
+  console.log('=== 도메인별 쿠키 분리 상태 확인 ===');
+  console.log('현재 도메인:', window.location.hostname);
+  console.log('API Base URL:', import.meta.env.VITE_API_BASE_URL);
+  
+  // 다른 도메인의 쿠키가 있는지 확인
+  const allCookies = document.cookie.split(';');
+  const currentDomain = window.location.hostname;
+  
+  console.log('현재 도메인 쿠키:');
+  allCookies.forEach(cookie => {
+    const [name, value] = cookie.trim().split('=');
+    if (name && value) {
+      console.log(`  ${name}: ${value.substring(0, 20)}...`);
+    }
+  });
+  
+  // 도메인 분리 권장사항
+  console.log('');
+  console.log('🔧 도메인 분리 권장사항:');
+  console.log('1. 백엔드 CORS 설정에서 allowedOrigins를 현재 도메인만 허용');
+  console.log('2. 쿠키 생성 시 setDomain() 설정 확인');
+  console.log('3. 각 도메인별로 별도 서버 또는 서브도메인 사용 고려');
+};
+
+/**
+ * 크로스도메인 쿠키 문제 진단 및 해결 방안 제시
+ */
+export const diagnoseCrossDomainCookieIssue = (): void => {
+  console.log('=== 크로스도메인 쿠키 문제 진단 ===');
+  
+  const currentDomain = window.location.hostname;
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+  const apiDomain = apiBaseUrl ? new URL(apiBaseUrl).hostname : 'unknown';
+  
+  console.log('현재 프론트엔드 도메인:', currentDomain);
+  console.log('API 서버 도메인:', apiDomain);
+  console.log('프로토콜:', window.location.protocol);
+  console.log('HTTPS 여부:', window.location.protocol === 'https:');
+  
+  // 문제 진단
+  const issues = [];
+  
+  if (currentDomain !== apiDomain) {
+    issues.push('✅ 크로스도메인 요청이 감지되었습니다.');
+  }
+  
+  if (window.location.protocol !== 'https:' && currentDomain !== 'localhost') {
+    issues.push('⚠️ HTTPS가 아닌 환경에서 SameSite=None 쿠키가 작동하지 않을 수 있습니다.');
+  }
+  
+  if (!hasCookie('access') && !hasCookie('refresh')) {
+    issues.push('❌ 인증 쿠키가 없습니다.');
+  }
+  
+  console.log('진단 결과:');
+  issues.forEach(issue => console.log(issue));
+  
+  // 해결 방안
+  console.log('');
+  console.log('🔧 해결 방안:');
+  console.log('1. 백엔드 CORS 설정 확인:');
+  console.log(`   - allowedOrigins: ["https://${currentDomain}"]`);
+  console.log('   - allowCredentials: true');
+  console.log('   - allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"]');
+  console.log('');
+  console.log('2. 쿠키 설정 확인:');
+  console.log('   - SameSite=None (크로스도메인용)');
+  console.log('   - Secure=true (HTTPS 환경)');
+  console.log('   - HttpOnly=false (클라이언트 접근용)');
+  console.log('');
+  console.log('3. 프론트엔드 설정 확인:');
+  console.log('   - withCredentials: true');
+  console.log('   - 적절한 헤더 설정');
+};
+
+/**
+ * 크로스도메인 쿠키 테스트 함수
+ */
+export const testCrossDomainCookie = async (): Promise<void> => {
+  console.log('=== 크로스도메인 쿠키 테스트 ===');
+  
+  try {
+    // 간단한 API 호출로 쿠키 설정 테스트
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/permit/user-info`, {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    });
+    
+    console.log('테스트 응답 상태:', response.status);
+    console.log('테스트 응답 헤더:', Object.fromEntries(response.headers.entries()));
+    
+    if (response.ok) {
+      console.log('✅ 크로스도메인 요청 성공');
+    } else {
+      console.log('❌ 크로스도메인 요청 실패');
+    }
+    
+  } catch (error) {
+    console.error('❌ 크로스도메인 테스트 에러:', error);
+  }
+};
+
+/**
+ * 크로스도메인 쿠키 문제 자동 해결 시도
+ */
+export const attemptCrossDomainCookieFix = async (): Promise<void> => {
+  console.log('=== 크로스도메인 쿠키 문제 자동 해결 시도 ===');
+  
+  const currentDomain = window.location.hostname;
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+  
+  console.log('현재 상황:', {
+    currentDomain,
+    apiBaseUrl,
+    protocol: window.location.protocol,
+    isHTTPS: window.location.protocol === 'https:'
+  });
+  
+  // 1. 기존 쿠키 정리
+  console.log('1단계: 기존 쿠키 정리');
+  clearAllCookies();
+  
+  // 2. 크로스도메인 테스트
+  console.log('2단계: 크로스도메인 테스트');
+  await testCrossDomainCookie();
+  
+  // 3. 쿠키 상태 재확인
+  console.log('3단계: 쿠키 상태 재확인');
+  checkDomainAndCookies();
+  
+  // 4. 해결 방안 제시
+  console.log('4단계: 해결 방안 제시');
+  diagnoseCrossDomainCookieIssue();
+  
+  console.log('✅ 크로스도메인 쿠키 문제 자동 해결 시도 완료');
+};
+
+/**
+ * 환경별 쿠키 설정 최적화
+ */
+export const optimizeCookieSettings = (): void => {
+  console.log('=== 환경별 쿠키 설정 최적화 ===');
+  
+  const currentDomain = window.location.hostname;
+  const isHTTPS = window.location.protocol === 'https:';
+  const isLocalhost = currentDomain === 'localhost' || currentDomain === '127.0.0.1';
+  const isVercel = currentDomain.includes('vercel.app');
+  
+  console.log('환경 정보:', {
+    currentDomain,
+    isHTTPS,
+    isLocalhost,
+    isVercel
+  });
+  
+  if (isLocalhost) {
+    console.log('🔧 로컬 환경 권장사항:');
+    console.log('- SameSite=Lax 또는 Strict 사용');
+    console.log('- Secure=false 설정');
+    console.log('- HttpOnly=false 설정 (개발용)');
+  } else if (isVercel) {
+    console.log('🔧 Vercel 환경 권장사항:');
+    console.log('- SameSite=None 사용 (크로스도메인용)');
+    console.log('- Secure=true 설정 (HTTPS 필수)');
+    console.log('- HttpOnly=false 설정 (클라이언트 접근용)');
+    console.log('- domain=.jangmadang.site 설정');
+  } else {
+    console.log('🔧 일반 프로덕션 환경 권장사항:');
+    console.log('- SameSite=Lax 사용');
+    console.log('- Secure=true 설정 (HTTPS 환경)');
+    console.log('- HttpOnly=true 설정 (보안용)');
+  }
 }; 

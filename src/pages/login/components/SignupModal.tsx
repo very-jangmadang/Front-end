@@ -9,6 +9,7 @@ import { Icon } from '@iconify/react';
 import axiosInstance from '../../../apis/axiosInstance';
 import { AxiosError } from 'axios';
 import { logAllCookies, checkAuthCookies } from '../../../utils/cookieUtils';
+import { useAuth } from '../../../context/AuthContext';
 
 interface ModalProps {
   onClose: () => void;
@@ -27,6 +28,7 @@ const RequestSignUp = async (nickname: string) => {
 
 const SignupModal: React.FC<ModalProps> = ({ onClose }) => {
   const { openModal } = useModalContext();
+  const { login } = useAuth(); // 인증 상태 업데이트를 위한 login 함수
   const [isError, setIsError] = useState('');
   const [name, setName] = useState('');
 
@@ -76,13 +78,28 @@ const SignupModal: React.FC<ModalProps> = ({ onClose }) => {
         logAllCookies();
         checkAuthCookies();
         
-        // 회원가입 성공 후 잠시 대기하여 쿠키가 설정되도록 함
-        setTimeout(() => {
+        // 회원가입 성공 후 토큰을 받았으므로 인증 상태 업데이트
+        console.log('회원가입 성공 - 인증 상태 업데이트 시작');
+        
+        // 잠시 대기하여 쿠키가 설정되도록 함
+        setTimeout(async () => {
           console.log('지연 후 쿠키 상태:', document.cookie);
           logAllCookies();
           checkAuthCookies();
-          openModal(({ onClose }) => <EnterModal onClose={onClose} />);
-        }, 100);
+          
+          try {
+            // 토큰을 받았으므로 인증 상태를 확인하고 업데이트
+            console.log('인증 상태 확인 및 업데이트');
+            await login(); // AuthContext의 login 함수 호출하여 인증 상태 업데이트
+            
+            console.log('인증 상태 업데이트 완료 - 다음 모달로 이동');
+            openModal(({ onClose }) => <EnterModal onClose={onClose} />);
+          } catch (authError) {
+            console.error('인증 상태 업데이트 실패:', authError);
+            // 인증 상태 업데이트가 실패해도 다음 모달로 이동
+            openModal(({ onClose }) => <EnterModal onClose={onClose} />);
+          }
+        }, 200); // 시간을 조금 더 늘려서 쿠키 설정 완료 보장
         
       } else if (response.code === 'USER_4008') {
         console.log('닉네임 중복');

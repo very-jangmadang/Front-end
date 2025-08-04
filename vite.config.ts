@@ -29,12 +29,20 @@ export default defineConfig({
       './src/assets/homePage/promotion3.svg'
     ]
   },
-  // server: {
-  //   proxy: {
-  //     '/api': {
-  //       target: 'http://localhost:3000',
-  //       changeOrigin: true,
-  //     },
-  //   },
-  // },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://jangmadang.site',
+        changeOrigin: true,
+        secure: true,
+        configure: (proxy, options) => {
+          proxy.on('proxyReq', (proxyReq, req, res) => {
+            // 크로스도메인 요청을 위한 헤더 설정
+            proxyReq.setHeader('X-Forwarded-Host', req.headers.host);
+            proxyReq.setHeader('X-Forwarded-Proto', 'https');
+          });
+        }
+      },
+    },
+  },
 });

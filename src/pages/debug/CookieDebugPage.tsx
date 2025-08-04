@@ -4,11 +4,17 @@ import {
   checkDomainAndCookies, 
   clearAllCookies, 
   clearSpecificCookies,
+  clearCurrentDomainCookies,
   logAllCookies, 
   checkAuthCookies,
   getCookie,
   hasCookie,
-  showCookieDebugInfo
+  showCookieDebugInfo,
+  checkDomainSeparation,
+  diagnoseCrossDomainCookieIssue,
+  testCrossDomainCookie,
+  attemptCrossDomainCookieFix,
+  optimizeCookieSettings
 } from '../../utils/cookieUtils';
 import axiosInstance from '../../apis/axiosInstance';
 
@@ -99,6 +105,42 @@ const CookieDebugPage: React.FC = () => {
     }
   };
 
+  const handleClearCurrentDomainCookies = () => {
+    addDebugInfo('=== 현재 도메인 쿠키만 삭제 ===');
+    clearCurrentDomainCookies();
+    addDebugInfo('현재 도메인 쿠키 삭제 완료');
+  };
+
+  const handleCheckDomainSeparation = () => {
+    addDebugInfo('=== 도메인 분리 상태 확인 ===');
+    checkDomainSeparation();
+    addDebugInfo('콘솔에서 도메인 분리 상태를 확인하세요.');
+  };
+
+  const handleDiagnoseCrossDomain = () => {
+    addDebugInfo('=== 크로스도메인 쿠키 문제 진단 ===');
+    diagnoseCrossDomainCookieIssue();
+    addDebugInfo('콘솔에서 크로스도메인 문제 진단 결과를 확인하세요.');
+  };
+
+  const handleTestCrossDomain = async () => {
+    addDebugInfo('=== 크로스도메인 쿠키 테스트 ===');
+    await testCrossDomainCookie();
+    addDebugInfo('콘솔에서 크로스도메인 테스트 결과를 확인하세요.');
+  };
+
+  const handleAutoFixCrossDomain = async () => {
+    addDebugInfo('=== 크로스도메인 쿠키 문제 자동 해결 시도 ===');
+    await attemptCrossDomainCookieFix();
+    addDebugInfo('콘솔에서 자동 해결 시도 결과를 확인하세요.');
+  };
+
+  const handleOptimizeCookieSettings = () => {
+    addDebugInfo('=== 환경별 쿠키 설정 최적화 ===');
+    optimizeCookieSettings();
+    addDebugInfo('콘솔에서 환경별 최적화 권장사항을 확인하세요.');
+  };
+
   return (
     <Container>
       <Title>쿠키 디버깅 페이지</Title>
@@ -130,6 +172,24 @@ const CookieDebugPage: React.FC = () => {
         </Button>
         <Button onClick={handleForceLogout} style={{ backgroundColor: '#dc3545' }}>
           강제 로그아웃
+        </Button>
+        <Button onClick={handleClearCurrentDomainCookies} style={{ backgroundColor: '#28a745' }}>
+          현재 도메인 쿠키만 삭제
+        </Button>
+        <Button onClick={handleCheckDomainSeparation} style={{ backgroundColor: '#17a2b8' }}>
+          도메인 분리 확인
+        </Button>
+        <Button onClick={handleDiagnoseCrossDomain} style={{ backgroundColor: '#6f42c1' }}>
+          크로스도메인 진단
+        </Button>
+        <Button onClick={handleTestCrossDomain} style={{ backgroundColor: '#fd7e14' }}>
+          크로스도메인 테스트
+        </Button>
+        <Button onClick={handleAutoFixCrossDomain} style={{ backgroundColor: '#e83e8c' }}>
+          자동 해결 시도
+        </Button>
+        <Button onClick={handleOptimizeCookieSettings} style={{ backgroundColor: '#20c997' }}>
+          환경별 최적화
         </Button>
       </ButtonGroup>
 

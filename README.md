@@ -98,6 +98,91 @@ res.redirect('https://jmd-fe.vercel.app/kakao');
 - 쿠키 도메인을 `window.location.hostname`으로 동적 설정
 - 세션 기반 인증 방식 유지
 
+### 6. 크로스도메인 쿠키 문제 해결 가이드
+
+#### 문제 상황
+- `jangmadang.site`에서는 정상적으로 쿠키가 설정됨
+- `jmd-fe.vercel.app`에서는 쿠키가 설정되지 않음
+- 크로스도메인 요청에서 쿠키 전송이 안됨
+
+#### 해결 방법
+
+##### 1. 백엔드 CORS 설정 확인
+```javascript
+const cors = require('cors');
+
+app.use(cors({
+  origin: [
+    'https://jmd-fe.vercel.app',
+    'https://www.jmd-fe.vercel.app',
+    'https://jangmadang.site',
+    'http://localhost:5173'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: [
+    'Content-Type', 
+    'Authorization', 
+    'X-Requested-With',
+    'X-Client-Domain',
+    'X-Client-Origin'
+  ]
+}));
+```
+
+##### 2. 쿠키 설정 확인
+```javascript
+// 로그인 성공 시 쿠키 설정
+res.cookie('access', accessToken, {
+  httpOnly: false, // 클라이언트에서 접근 가능
+  secure: true, // HTTPS에서만
+  sameSite: 'none', // 크로스도메인 허용
+  domain: '.jangmadang.site', // 서브도메인 포함
+  maxAge: 24 * 60 * 60 * 1000 // 24시간
+});
+
+res.cookie('refresh', refreshToken, {
+  httpOnly: false,
+  secure: true,
+  sameSite: 'none',
+  domain: '.jangmadang.site',
+  maxAge: 7 * 24 * 60 * 60 * 1000 // 7일
+});
+```
+
+##### 3. 프론트엔드 axios 설정
+```javascript
+const axiosInstance = axios.create({
+  baseURL: 'https://jangmadang.site',
+  withCredentials: true, // 쿠키 전송 허용
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'X-Requested-With': 'XMLHttpRequest'
+  }
+});
+```
+
+##### 4. 디버깅 방법
+1. 브라우저 개발자 도구 열기 (F12)
+2. Application 탭 → Cookies 확인
+3. Network 탭에서 요청/응답 헤더 확인
+4. 콘솔에서 CORS 에러 메시지 확인
+
+##### 5. 환경 변수 설정
+Vercel 대시보드에서 다음 환경 변수 설정:
+```bash
+VITE_API_BASE_URL=https://jangmadang.site
+```
+
+#### 문제 해결 체크리스트
+- [ ] 백엔드 CORS 설정에서 `jmd-fe.vercel.app` 도메인 허용
+- [ ] 쿠키 설정에서 `sameSite: 'none'` 설정
+- [ ] 쿠키 설정에서 `secure: true` 설정 (HTTPS 환경)
+- [ ] 프론트엔드에서 `withCredentials: true` 설정
+- [ ] 환경 변수 `VITE_API_BASE_URL` 올바르게 설정
+- [ ] Vercel 재배포 완료
+
 ### 6. 환경 변수 확인 방법
 브라우저 콘솔에서 다음을 확인하세요:
 ```javascript
