@@ -1,8 +1,12 @@
 import axios from 'axios';
 
+// 환경 변수가 없을 때 기본값 설정
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.jangmadang.site';
+
 // 환경 변수 디버깅
 console.log('API 설정 정보:', {
-  baseURL: import.meta.env.VITE_API_BASE_URL,
+  envBaseURL: import.meta.env.VITE_API_BASE_URL,
+  actualBaseURL: API_BASE_URL,
   hasAccessToken: !!import.meta.env.VITE_API_ACCESS_TOKEN,
   currentDomain: window.location.hostname,
   currentOrigin: window.location.origin,
@@ -12,7 +16,7 @@ console.log('API 설정 정보:', {
 });
 
 const axiosInstance = axios.create({
-  baseURL: `${import.meta.env.VITE_API_BASE_URL}`,
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
