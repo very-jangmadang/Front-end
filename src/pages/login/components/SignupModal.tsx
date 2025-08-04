@@ -8,27 +8,20 @@ import { useModalContext } from '../../../components/Modal/context/ModalContext'
 import { Icon } from '@iconify/react';
 import axiosInstance from '../../../apis/axiosInstance';
 import { AxiosError } from 'axios';
-import { logAllCookies, checkAuthCookies } from '../../../utils/cookieUtils';
-import { useAuth } from '../../../context/AuthContext';
 
 interface ModalProps {
   onClose: () => void;
 }
 
 const RequestSignUp = async (nickname: string) => {
-  const requestBody = { nickname };
-  
-  console.log('회원가입 요청 데이터:', requestBody);
-  
-  const response = await axiosInstance.post('/api/permit/nickname', requestBody, {
-    withCredentials: true
+  const response = await axiosInstance.post('/api/permit/nickname', {
+    nickname,
   });
   return response.data;
 };
 
 const SignupModal: React.FC<ModalProps> = ({ onClose }) => {
   const { openModal } = useModalContext();
-  const { login } = useAuth(); // 인증 상태 업데이트를 위한 login 함수
   const [isError, setIsError] = useState('');
   const [name, setName] = useState('');
 
@@ -48,69 +41,19 @@ const SignupModal: React.FC<ModalProps> = ({ onClose }) => {
       return;
     }
 
-    console.log('회원가입 시도:', { nickname: name });
-    
-    // 회원가입 전 쿠키 상태 확인
-    console.log('회원가입 전 쿠키 상태:', document.cookie);
-    logAllCookies();
-    checkAuthCookies();
-    
-    // 회원가입 전 세션 상태 확인
-    try {
-      const sessionCheck = await axiosInstance.get('/api/permit/user-info', {
-        withCredentials: true,
-      });
-      console.log('회원가입 전 세션 상태:', sessionCheck.data);
-    } catch (error) {
-      console.log('회원가입 전 세션 확인 실패:', error);
-    }
-
     try {
       const response = await RequestSignUp(name);
-      console.log('회원가입 성공:', response);
 
-      // 백엔드 응답 형식에 맞춰서 처리
-      if (response.isSuccess && response.code === 'COMMON_200') {
+      if (response.code === 'COMMON_200') {
         setIsError('');
-        
-        // 쿠키 설정 확인
-        console.log('회원가입 후 쿠키 상태:', document.cookie);
-        logAllCookies();
-        checkAuthCookies();
-        
-        // 회원가입 성공 후 토큰을 받았으므로 인증 상태 업데이트
-        console.log('회원가입 성공 - 인증 상태 업데이트 시작');
-        
-        // 잠시 대기하여 쿠키가 설정되도록 함
-        setTimeout(async () => {
-          console.log('지연 후 쿠키 상태:', document.cookie);
-          logAllCookies();
-          checkAuthCookies();
-          
-          try {
-            // 토큰을 받았으므로 인증 상태를 확인하고 업데이트
-            console.log('인증 상태 확인 및 업데이트');
-            await login(); // AuthContext의 login 함수 호출하여 인증 상태 업데이트
-            
-            console.log('인증 상태 업데이트 완료 - 다음 모달로 이동');
-            openModal(({ onClose }) => <EnterModal onClose={onClose} />);
-          } catch (authError) {
-            console.error('인증 상태 업데이트 실패:', authError);
-            // 인증 상태 업데이트가 실패해도 다음 모달로 이동
-            openModal(({ onClose }) => <EnterModal onClose={onClose} />);
-          }
-        }, 200); // 시간을 조금 더 늘려서 쿠키 설정 완료 보장
-        
+        openModal(({ onClose }) => <EnterModal onClose={onClose} />);
       } else if (response.code === 'USER_4008') {
         console.log('닉네임 중복');
         setIsError('중복된 닉네임입니다');
       } else {
-        console.log('예상치 못한 응답 코드:', response.code);
-        setIsError(response.message || '회원가입 중 오류가 발생했습니다.');
+        setIsError('');
       }
     } catch (err) {
-      console.error('회원가입 에러:', err);
-      
       const error = err as AxiosError<{
         isSuccess: boolean;
         code: string;
@@ -118,50 +61,20 @@ const SignupModal: React.FC<ModalProps> = ({ onClose }) => {
       }>;
 
       if (error.response) {
-        console.error('서버 응답 에러:', {
-          status: error.response.status,
-          statusText: error.response.statusText,
-          data: error.response.data,
-          headers: error.response.headers
-        });
-        
         if (error.response.status === 400) {
-          const errorData = error.response.data;
-          const errorCode = errorData?.code;
+          const errorCode = error.response.data?.code;
 
           if (errorCode === 'USER_4008') {
             console.log('닉네임 중복');
             setIsError('중복된 닉네임입니다');
           } else {
-            console.log('400 에러 - 알 수 없는 코드:', errorCode);
-            setIsError(errorData?.message || '회원가입 실패: 알 수 없는 오류');
+            setIsError('');
           }
-        } else if (error.response.status === 401) {
-          console.log('인증 실패 - 로그인이 필요합니다');
-          setIsError('로그인이 필요합니다. 다시 로그인해주세요.');
-        } else if (error.response.status === 403) {
-          console.log('권한 없음');
-          setIsError('권한이 없습니다.');
-        } else if (error.response.status === 500) {
-          console.log('서버 내부 오류');
-          setIsError('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
         } else {
-          console.log('기타 HTTP 에러:', error.response.status);
-          const errorData = error.response.data;
-          setIsError(`서버 오류 (${error.response.status}): ${errorData?.message || '알 수 없는 오류'}`);
+          setIsError('');
         }
-      } else if (error.request) {
-        console.error('네트워크 에러:', {
-          request: error.request,
-          message: error.message
-        });
-        setIsError('네트워크 연결을 확인해주세요.');
       } else {
-        console.error('기타 에러:', {
-          message: error.message,
-          stack: error.stack
-        });
-        setIsError('알 수 없는 오류가 발생했습니다.');
+        setIsError('');
       }
     }
   };

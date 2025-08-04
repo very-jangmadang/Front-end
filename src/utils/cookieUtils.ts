@@ -805,49 +805,6 @@ export const ultraClearAllCookies = async (): Promise<void> => {
 };
 
 /**
- * iframe을 사용한 크로스도메인 쿠키 삭제 함수
- */
-export const clearCookiesViaIframe = async (): Promise<void> => {
-  console.log('=== iframe을 사용한 크로스도메인 쿠키 삭제 시작 ===');
-  
-  const crossDomainUrls = [
-    'https://jangmadang.site',
-    'https://www.jangmadang.site'
-  ];
-  
-  const iframePromises = crossDomainUrls.map(url => {
-    return new Promise<void>((resolve) => {
-      try {
-        const iframe = document.createElement('iframe');
-        iframe.style.display = 'none';
-        // 실제 API 엔드포인트 사용
-        iframe.src = `${url}/api/permit/logout`;
-        iframe.onload = () => {
-          console.log(`iframe 로드 완료: ${url}`);
-          setTimeout(() => {
-            if (document.body.contains(iframe)) {
-              document.body.removeChild(iframe);
-            }
-            resolve();
-          }, 1000);
-        };
-        iframe.onerror = () => {
-          console.warn(`iframe 로드 실패: ${url}`);
-          resolve();
-        };
-        document.body.appendChild(iframe);
-      } catch (error) {
-        console.warn(`iframe 생성 실패 (${url}):`, error);
-        resolve();
-      }
-    });
-  });
-  
-  await Promise.all(iframePromises);
-  console.log('✅ iframe을 사용한 크로스도메인 쿠키 삭제 완료');
-};
-
-/**
  * 완전한 브라우저 스토리지 정리 함수
  */
 export const clearAllBrowserStorage = async (): Promise<void> => {
@@ -921,17 +878,14 @@ export const performCompleteLogout = async (): Promise<void> => {
   // 1. 초강력 쿠키 삭제
   await ultraClearAllCookies();
   
-  // 2. iframe을 사용한 크로스도메인 쿠키 삭제
-  await clearCookiesViaIframe();
-  
-  // 3. 완전한 브라우저 스토리지 정리
+  // 2. 완전한 브라우저 스토리지 정리
   await clearAllBrowserStorage();
   
-  // 4. 로그아웃 시간 기록
+  // 3. 로그아웃 시간 기록
   localStorage.setItem('logoutTime', Date.now().toString());
   sessionStorage.setItem('logoutTime', Date.now().toString());
   
-  // 5. 최종 쿠키 상태 확인
+  // 4. 최종 쿠키 상태 확인
   setTimeout(() => {
     checkDomainAndCookies();
   }, 1000);
@@ -947,35 +901,58 @@ export const forceServerLogout = async (): Promise<void> => {
   
   const logoutUrls = [
     'https://jangmadang.site/api/permit/logout',
-    'https://www.jangmadang.site/api/permit/logout'
+    'https://www.jangmadang.site/api/permit/logout',
+    'https://api.jangmadang.site/api/permit/logout'
   ];
   
-  // 모든 도메인에서 서버 로그아웃 시도
-  const logoutPromises = logoutUrls.map(async (url) => {
-    try {
-      console.log(`서버 로그아웃 시도: ${url}`);
-      
-      // fetch를 사용하여 직접 로그아웃 요청
-      const response = await fetch(url, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest'
+  // 모든 도메인에서 서버 로그아웃 시도 (여러 번 반복)
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    console.log(`서버 로그아웃 시도 ${attempt}/3`);
+    
+    const logoutPromises = logoutUrls.map(async (url) => {
+      try {
+        console.log(`서버 로그아웃 시도: ${url}`);
+        
+        // fetch를 사용하여 직접 로그아웃 요청
+        const response = await fetch(url, {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        });
+        
+        if (response.ok) {
+          console.log(`✅ 서버 로그아웃 성공: ${url}`);
+          return true;
+        } else {
+          console.warn(`⚠️ 서버 로그아웃 실패: ${url} (${response.status})`);
+          return false;
         }
-      });
-      
-      if (response.ok) {
-        console.log(`✅ 서버 로그아웃 성공: ${url}`);
-      } else {
-        console.warn(`⚠️ 서버 로그아웃 실패: ${url} (${response.status})`);
+      } catch (error) {
+        console.error(`❌ 서버 로그아웃 에러: ${url}`, error);
+        return false;
       }
-    } catch (error) {
-      console.error(`❌ 서버 로그아웃 에러: ${url}`, error);
+    });
+    
+    const results = await Promise.all(logoutPromises);
+    const successCount = results.filter(result => result).length;
+    
+    console.log(`시도 ${attempt}: ${successCount}/${logoutUrls.length} 성공`);
+    
+    // 성공한 경우 다음 시도 건너뛰기
+    if (successCount > 0) {
+      console.log('✅ 서버 로그아웃 성공 - 추가 시도 중단');
+      break;
     }
-  });
+    
+    // 마지막 시도가 아니면 잠시 대기
+    if (attempt < 3) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+  }
   
-  await Promise.all(logoutPromises);
   console.log('✅ 강력한 서버 로그아웃 완료');
 };
 
@@ -991,25 +968,22 @@ export const performUltimateLogout = async (): Promise<void> => {
   // 2. 초강력 쿠키 삭제
   await ultraClearAllCookies();
   
-  // 3. iframe을 사용한 크로스도메인 쿠키 삭제
-  await clearCookiesViaIframe();
-  
-  // 4. 완전한 브라우저 스토리지 정리
+  // 3. 완전한 브라우저 스토리지 정리
   await clearAllBrowserStorage();
   
-  // 5. 로그아웃 시간 기록 (10초로 증가)
+  // 4. 로그아웃 시간 기록 (15초로 증가)
   const logoutTime = Date.now().toString();
   localStorage.setItem('logoutTime', logoutTime);
   sessionStorage.setItem('logoutTime', logoutTime);
   
-  // 6. 추가 쿠키 삭제 시도 (여러 번)
+  // 5. 추가 쿠키 삭제 시도 (여러 번)
   for (let i = 0; i < 3; i++) {
     setTimeout(async () => {
       await ultraClearAllCookies();
     }, (i + 1) * 1000);
   }
   
-  // 7. 최종 상태 확인
+  // 6. 최종 상태 확인
   setTimeout(() => {
     checkDomainAndCookies();
   }, 3000);

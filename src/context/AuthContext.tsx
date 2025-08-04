@@ -1,11 +1,10 @@
 import { createContext, useContext } from 'react';
 
-export interface AuthContextType {
+export type AuthContextType = {
   isAuthenticated: boolean;
   login: () => Promise<void>;
-  logout: () => Promise<void>;
-  clearLogoutState: () => void; // 수동 초기화 함수 추가
-}
+  logout: () => void;
+};
 
 export const AuthContext = createContext<AuthContextType | undefined>(
   undefined,

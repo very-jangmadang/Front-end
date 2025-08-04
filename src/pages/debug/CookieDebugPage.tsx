@@ -20,7 +20,6 @@ import {
   preventAutoLoginAfterLogout,
   clearLogoutPrevention,
   ultraClearAllCookies,
-  clearCookiesViaIframe,
   clearAllBrowserStorage,
   performCompleteLogout,
   forceServerLogout,
@@ -181,11 +180,7 @@ const CookieDebugPage: React.FC = () => {
     addDebugInfo('초강력 쿠키 삭제 완료');
   };
 
-  const handleClearCookiesViaIframe = async () => {
-    addDebugInfo('=== iframe을 사용한 크로스도메인 쿠키 삭제 시작 ===');
-    await clearCookiesViaIframe();
-    addDebugInfo('iframe을 사용한 크로스도메인 쿠키 삭제 완료');
-  };
+
 
   const handleClearAllBrowserStorage = async () => {
     addDebugInfo('=== 완전한 브라우저 스토리지 정리 시작 ===');
@@ -276,9 +271,7 @@ const CookieDebugPage: React.FC = () => {
         <Button onClick={handleUltraClearCookies} style={{ backgroundColor: '#8e44ad' }}>
           초강력 쿠키 삭제
         </Button>
-        <Button onClick={handleClearCookiesViaIframe} style={{ backgroundColor: '#e67e22' }}>
-          iframe 쿠키 삭제
-        </Button>
+
         <Button onClick={handleClearAllBrowserStorage} style={{ backgroundColor: '#27ae60' }}>
           브라우저 스토리지 정리
         </Button>
