@@ -8,7 +8,9 @@ import {
   showCookieDebugInfo,
   ultraClearAllCookies,
   clearCookiesViaIframe,
-  clearAllBrowserStorage
+  clearAllBrowserStorage,
+  forceServerLogout,
+  performUltimateLogout
 } from '../utils/cookieUtils';
 
 const MAX_RETRIES = 1; // 재시도 횟수를 제한 (예: 1번)
@@ -26,11 +28,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    // 로그아웃 후 강제 대기 시간 (5초로 증가)
+    // 로그아웃 후 강제 대기 시간 (10초로 증가)
     const logoutTime = localStorage.getItem('logoutTime');
     if (logoutTime) {
       const timeSinceLogout = Date.now() - parseInt(logoutTime);
-      if (timeSinceLogout < 5000) { // 3초에서 5초로 증가
+      if (timeSinceLogout < 5000) {
         console.log('로그아웃 후 대기 시간 중, 로그인 체크 건너뜀');
         setIsAuthenticated(false);
         return;
@@ -44,7 +46,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const sessionLogoutTime = sessionStorage.getItem('logoutTime');
     if (sessionLogoutTime) {
       const timeSinceSessionLogout = Date.now() - parseInt(sessionLogoutTime);
-      if (timeSinceSessionLogout < 5000) {
+      if (timeSinceSessionLogout < 10000) {
         console.log('세션 로그아웃 후 대기 시간 중, 로그인 체크 건너뜀');
         setIsAuthenticated(false);
         return;
@@ -126,99 +128,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // 로그아웃 함수
   const logout = async () => {
-    console.log('=== 초강력 로그아웃 시작 (완전한 다중 도메인 대응) ===');
+    console.log('=== 궁극의 다중 도메인 로그아웃 시작 ===');
     checkDomainAndCookies(); // 로그아웃 전 상태 확인
     showCookieDebugInfo(); // 디버깅 안내
     
     setIsLoggingOut(true); // 로그아웃 시작
     setIsAuthenticated(false); // 즉시 인증 상태를 false로 설정
     
-    // 로그아웃 시간 기록 (자동 로그인 방지용)
-    localStorage.setItem('logoutTime', Date.now().toString());
-    sessionStorage.setItem('logoutTime', Date.now().toString());
-    
-    // 1단계: 서버 로그아웃 요청 (여러 번 시도)
-    console.log('1단계: 서버 로그아웃 요청 시작');
-    
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      try {
-        console.log(`서버 로그아웃 시도 ${attempt}/3`);
-        const response = await axiosInstance.post(
-          '/api/permit/logout',
-          {},
-          { 
-            withCredentials: true,
-          },
-        );
+    try {
+      // 궁극의 다중 도메인 로그아웃 실행
+      await performUltimateLogout();
+      
+      console.log('✅ 인증 상태를 false로 설정 완료');
+      
+      // 완료 처리 (더 긴 대기 시간)
+      setTimeout(() => {
+        console.log('✅ 궁극의 다중 도메인 로그아웃 완료 - 홈으로 이동');
+        setIsLoggingOut(false);
         
-        console.log('서버 로그아웃 응답:', response);
+        // URL 파라미터 정리
+        const cleanUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
         
-        const responseData = response.data;
-        if (responseData && responseData.isSuccess) {
-          console.log('✅ 서버 로그아웃 성공:', responseData.message);
-          break; // 성공하면 루프 종료
-        } else {
-          console.warn('⚠️ 로그아웃 응답 형식 이상:', responseData);
-        }
-        
-      } catch (error: any) {
-        console.error(`❌ 서버 로그아웃 시도 ${attempt} 실패:`, error);
-        
-        if (error.response) {
-          console.error('서버 응답 에러:', {
-            status: error.response.status,
-            responseCode: error.response.data?.code,
-            message: error.response.data?.message,
-          });
-        } else {
-          console.error('네트워크 에러:', error);
-        }
-        
-        // 마지막 시도가 아니면 잠시 대기 후 재시도
-        if (attempt < 3) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-      }
-    }
-    
-    // 2단계: 초강력 다중 도메인 쿠키 정리
-    console.log('2단계: 초강력 다중 도메인 쿠키 정리 시작');
-    await ultraClearAllCookies();
-    
-    // 3단계: iframe을 사용한 크로스도메인 쿠키 삭제
-    console.log('3단계: iframe을 사용한 크로스도메인 쿠키 삭제');
-    await clearCookiesViaIframe();
-    
-    // 4단계: 브라우저 스토리지 정리 (초강화)
-    console.log('4단계: 브라우저 스토리지 정리 (초강화)');
-    await clearAllBrowserStorage();
-    
-    // 5단계: 추가 쿠키 삭제 시도 (최종)
-    console.log('5단계: 최종 쿠키 삭제 시도');
-    setTimeout(async () => {
-      await ultraClearAllCookies();
-    }, 1000);
-    
-    // 6단계: 최종 상태 확인
-    console.log('6단계: 로그아웃 후 최종 쿠키 상태 확인');
-    setTimeout(() => {
-      checkDomainAndCookies();
-    }, 2000);
-    
-    console.log('✅ 인증 상태를 false로 설정 완료');
-    
-    // 7단계: 완료 처리 (더 긴 대기 시간)
-    setTimeout(() => {
-      console.log('✅ 초강력 다중 도메인 로그아웃 완료 - 홈으로 이동');
+        // 강제 새로고침으로 완전한 상태 초기화
+        window.location.reload();
+      }, 8000); // 시간을 더 늘려서 모든 정리 작업 완료 보장
+      
+    } catch (error) {
+      console.error('로그아웃 중 오류 발생:', error);
       setIsLoggingOut(false);
       
-      // URL 파라미터 정리
-      const cleanUrl = window.location.pathname;
-      window.history.replaceState({}, document.title, cleanUrl);
-      
-      // 강제 새로고침으로 완전한 상태 초기화
-      window.location.reload();
-    }, 5000); // 시간을 더 늘려서 모든 정리 작업 완료 보장
+      // 오류가 발생해도 기본 정리 작업 수행
+      setTimeout(() => {
+        window.location.reload();
+      }, 3000);
+    }
   };
 
   // 리프레시 토큰 요청 함수

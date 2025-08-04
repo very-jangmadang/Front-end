@@ -105,13 +105,17 @@ res.redirect('https://jmd-fe.vercel.app/kakao');
 - 로그아웃 후 새로고침 시 자동으로 다시 로그인되는 문제
 
 #### 해결책
-1. **초강력 쿠키 삭제**: 모든 가능한 도메인과 경로에서 쿠키 삭제
-2. **iframe을 사용한 크로스도메인 쿠키 삭제**: 다른 도메인의 쿠키도 삭제
-3. **완전한 브라우저 스토리지 정리**: localStorage, sessionStorage, IndexedDB, 캐시, 서비스워커 모두 정리
-4. **자동 로그인 방지**: 로그아웃 후 5초간 로그인 체크 방지
+1. **강력한 서버 로그아웃**: 백엔드 세션을 완전히 삭제
+2. **초강력 쿠키 삭제**: 모든 가능한 도메인과 경로에서 쿠키 삭제
+3. **iframe을 사용한 크로스도메인 쿠키 삭제**: 다른 도메인의 쿠키도 삭제
+4. **완전한 브라우저 스토리지 정리**: localStorage, sessionStorage, IndexedDB, 캐시, 서비스워커 모두 정리
+5. **자동 로그인 방지**: 로그아웃 후 10초간 로그인 체크 방지
 
 #### 새로운 유틸리티 함수들
 ```typescript
+// 강력한 서버 로그아웃 (백엔드 세션 삭제)
+await forceServerLogout();
+
 // 초강력 쿠키 삭제
 await ultraClearAllCookies();
 
@@ -123,6 +127,9 @@ await clearAllBrowserStorage();
 
 // 완전한 로그아웃 (모든 정리 작업 포함)
 await performCompleteLogout();
+
+// 궁극의 다중 도메인 로그아웃 (최종 버전)
+await performUltimateLogout();
 ```
 
 #### 디버깅 도구

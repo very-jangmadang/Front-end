@@ -22,7 +22,9 @@ import {
   ultraClearAllCookies,
   clearCookiesViaIframe,
   clearAllBrowserStorage,
-  performCompleteLogout
+  performCompleteLogout,
+  forceServerLogout,
+  performUltimateLogout
 } from '../../utils/cookieUtils';
 import axiosInstance from '../../apis/axiosInstance';
 
@@ -197,6 +199,18 @@ const CookieDebugPage: React.FC = () => {
     addDebugInfo('완전한 로그아웃 완료');
   };
 
+  const handleForceServerLogout = async () => {
+    addDebugInfo('=== 강력한 서버 로그아웃 시작 ===');
+    await forceServerLogout();
+    addDebugInfo('강력한 서버 로그아웃 완료');
+  };
+
+  const handlePerformUltimateLogout = async () => {
+    addDebugInfo('=== 궁극의 다중 도메인 로그아웃 시작 ===');
+    await performUltimateLogout();
+    addDebugInfo('궁극의 다중 도메인 로그아웃 완료');
+  };
+
   return (
     <Container>
       <Title>쿠키 디버깅 페이지</Title>
@@ -270,6 +284,12 @@ const CookieDebugPage: React.FC = () => {
         </Button>
         <Button onClick={handlePerformCompleteLogout} style={{ backgroundColor: '#c0392b' }}>
           완전한 로그아웃
+        </Button>
+        <Button onClick={handleForceServerLogout} style={{ backgroundColor: '#8e44ad' }}>
+          강력한 서버 로그아웃
+        </Button>
+        <Button onClick={handlePerformUltimateLogout} style={{ backgroundColor: '#2c3e50' }}>
+          궁극의 로그아웃
         </Button>
       </ButtonGroup>
 

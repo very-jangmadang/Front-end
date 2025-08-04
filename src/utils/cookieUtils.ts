@@ -532,76 +532,175 @@ export const solveMultiDomainLogoutIssue = async (): Promise<void> => {
  * 백엔드 세션 설정 권장사항
  */
 export const getBackendSessionRecommendations = (): void => {
-  console.log('=== 백엔드 세션 설정 권장사항 ===');
+  console.log('=== 백엔드 세션 설정 권장사항 (2024년 업데이트) ===');
   
-  console.log('🔧 해결 방안 1: 도메인별 세션 분리');
-  console.log('```javascript');
-  console.log('// Express.js 세션 설정');
-  console.log('const session = require(\'express-session\');');
-  console.log('');
-  console.log('app.use(session({');
-  console.log('  secret: \'your-secret-key\',');
-  console.log('  resave: false,');
-  console.log('  saveUninitialized: false,');
-  console.log('  cookie: {');
-  console.log('    httpOnly: true,');
-  console.log('    secure: true,');
-  console.log('    sameSite: \'none\',');
-  console.log('    domain: \'.jangmadang.site\', // 공통 도메인');
-  console.log('    maxAge: 24 * 60 * 60 * 1000');
-  console.log('  }');
-  console.log('}));');
-  console.log('```');
+  console.log('1. Express.js 세션 설정:');
+  console.log(`
+const session = require('express-session');
+const RedisStore = require('connect-redis').default;
+
+// Redis 클라이언트 설정 (권장)
+const redisClient = require('redis').createClient({
+  url: 'redis://localhost:6379'
+});
+
+app.use(session({
+  store: new RedisStore({ client: redisClient }),
+  secret: 'your-super-secret-key-here',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    secure: true, // HTTPS에서만
+    sameSite: 'none', // 크로스 도메인 허용
+    domain: '.jangmadang.site', // 서브도메인 포함
+    maxAge: 24 * 60 * 60 * 1000 // 24시간
+  },
+  name: 'sessionId' // 기본 connect.sid 대신 커스텀 이름 사용
+}));
+  `);
   
-  console.log('');
-  console.log('🔧 해결 방안 2: 로그아웃 시 모든 도메인 쿠키 삭제');
-  console.log('```javascript');
-  console.log('// 로그아웃 API');
-  console.log('app.post(\'/api/permit/logout\', (req, res) => {');
-  console.log('  req.session.destroy((err) => {');
-  console.log('    if (err) {');
-  console.log('      return res.status(500).json({ error: \'로그아웃 실패\' });');
-  console.log('    }');
-  console.log('    ');
-  console.log('    // 모든 도메인의 쿠키 삭제');
-  console.log('    res.clearCookie(\'connect.sid\', {');
-  console.log('      domain: \'.jangmadang.site\'');
-  console.log('    });');
-  console.log('    res.clearCookie(\'access\', {');
-  console.log('      domain: \'.jangmadang.site\'');
-  console.log('    });');
-  console.log('    res.clearCookie(\'refresh\', {');
-  console.log('      domain: \'.jangmadang.site\'');
-  console.log('    });');
-  console.log('    ');
-  console.log('    res.json({ success: true });');
-  console.log('  });');
-  console.log('});');
-  console.log('```');
+  console.log('2. 강화된 로그아웃 API:');
+  console.log(`
+app.post('/api/permit/logout', async (req, res) => {
+  try {
+    // 1. 세션 완전 삭제
+    await new Promise((resolve, reject) => {
+      req.session.destroy((err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+    
+    // 2. 모든 관련 쿠키 삭제
+    const cookiesToClear = [
+      'sessionId',
+      'connect.sid', 
+      'access',
+      'refresh',
+      'idtoken'
+    ];
+    
+    cookiesToClear.forEach(cookieName => {
+      res.clearCookie(cookieName, {
+        domain: '.jangmadang.site',
+        path: '/',
+        httpOnly: true,
+        secure: true,
+        sameSite: 'none'
+      });
+      
+      // 추가 도메인에서도 삭제
+      res.clearCookie(cookieName, {
+        domain: '.vercel.app',
+        path: '/',
+        httpOnly: true,
+        secure: true,
+        sameSite: 'none'
+      });
+    });
+    
+    // 3. Redis에서 세션 데이터 완전 삭제 (Redis 사용 시)
+    if (req.sessionID && redisClient) {
+      await redisClient.del(req.sessionID);
+    }
+    
+    res.json({
+      isSuccess: true,
+      code: 'USER_2004',
+      message: '성공적으로 로그아웃하였습니다.',
+      result: {}
+    });
+    
+  } catch (error) {
+    console.error('로그아웃 처리 중 오류:', error);
+    res.status(500).json({
+      isSuccess: false,
+      code: 'SERVER_ERROR',
+      message: '로그아웃 처리 중 오류가 발생했습니다.'
+    });
+  }
+});
+  `);
   
-  console.log('');
-  console.log('🔧 해결 방안 3: 세션 스토어 사용');
-  console.log('```javascript');
-  console.log('// Redis 세션 스토어 사용');
-  console.log('const RedisStore = require(\'connect-redis\').default;');
-  console.log('const redis = require(\'redis\');');
-  console.log('');
-  console.log('const redisClient = redis.createClient();');
-  console.log('const redisStore = new RedisStore({ client: redisClient });');
-  console.log('');
-  console.log('app.use(session({');
-  console.log('  store: redisStore,');
-  console.log('  secret: \'your-secret-key\',');
-  console.log('  resave: false,');
-  console.log('  saveUninitialized: false,');
-  console.log('  cookie: {');
-  console.log('    httpOnly: true,');
-  console.log('    secure: true,');
-  console.log('    sameSite: \'none\',');
-  console.log('    domain: \'.jangmadang.site\'');
-  console.log('  }');
-  console.log('}));');
-  console.log('```');
+  console.log('3. 세션 미들웨어 설정:');
+  console.log(`
+// 세션 유효성 검사 미들웨어
+app.use((req, res, next) => {
+  if (req.session && req.session.userId) {
+    // 세션이 유효한 경우
+    req.isAuthenticated = true;
+  } else {
+    // 세션이 없거나 유효하지 않은 경우
+    req.isAuthenticated = false;
+  }
+  next();
+});
+
+// 인증이 필요한 라우트 보호
+const requireAuth = (req, res, next) => {
+  if (!req.isAuthenticated) {
+    return res.status(401).json({
+      isSuccess: false,
+      code: 'AUTH_4001',
+      message: '로그인이 필요합니다.'
+    });
+  }
+  next();
+};
+  `);
+  
+  console.log('4. CORS 설정 (완전한 버전):');
+  console.log(`
+const cors = require('cors');
+
+app.use(cors({
+  origin: function (origin, callback) {
+    const allowedOrigins = [
+      'https://jangmadang.site',
+      'https://www.jangmadang.site',
+      'https://jmd-fe.vercel.app',
+      'https://www.jmd-fe.vercel.app',
+      'http://localhost:5173',
+      'http://localhost:3000'
+    ];
+    
+    // origin이 undefined인 경우 (같은 도메인 요청)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.warn('CORS 차단된 origin:', origin);
+      callback(new Error('CORS 정책에 의해 차단됨'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: [
+    'Content-Type', 
+    'Authorization', 
+    'X-Requested-With',
+    'X-Client-Domain',
+    'X-Client-Origin'
+  ],
+  exposedHeaders: ['Set-Cookie']
+}));
+  `);
+  
+  console.log('5. 세션 스토어 권장사항:');
+  console.log('- Redis 사용을 강력히 권장 (메모리 기반 세션은 서버 재시작 시 손실)');
+  console.log('- 세션 TTL 설정으로 자동 만료 관리');
+  console.log('- 세션 데이터 최소화 (민감한 정보 저장 금지)');
+  console.log('- 정기적인 세션 정리 작업 수행');
+  
+  console.log('6. 보안 권장사항:');
+  console.log('- 세션 시크릿 키를 환경 변수로 관리');
+  console.log('- HTTPS 필수 사용');
+  console.log('- 쿠키 설정에서 httpOnly, secure, sameSite 적절히 설정');
+  console.log('- 정기적인 세션 만료 시간 검토');
+  
+  console.log('✅ 백엔드 세션 설정 권장사항 완료');
 };
 
 /**
@@ -713,8 +812,7 @@ export const clearCookiesViaIframe = async (): Promise<void> => {
   
   const crossDomainUrls = [
     'https://jangmadang.site',
-    'https://www.jangmadang.site',
-    'https://jmd-fe.vercel.app'
+    'https://www.jangmadang.site'
   ];
   
   const iframePromises = crossDomainUrls.map(url => {
@@ -722,6 +820,7 @@ export const clearCookiesViaIframe = async (): Promise<void> => {
       try {
         const iframe = document.createElement('iframe');
         iframe.style.display = 'none';
+        // 실제 API 엔드포인트 사용
         iframe.src = `${url}/api/permit/logout`;
         iframe.onload = () => {
           console.log(`iframe 로드 완료: ${url}`);
@@ -838,4 +937,82 @@ export const performCompleteLogout = async (): Promise<void> => {
   }, 1000);
   
   console.log('✅ 완전한 로그아웃 완료');
+};
+
+/**
+ * 강력한 서버 로그아웃 함수 (백엔드 세션 완전 삭제)
+ */
+export const forceServerLogout = async (): Promise<void> => {
+  console.log('=== 강력한 서버 로그아웃 시작 ===');
+  
+  const logoutUrls = [
+    'https://jangmadang.site/api/permit/logout',
+    'https://www.jangmadang.site/api/permit/logout'
+  ];
+  
+  // 모든 도메인에서 서버 로그아웃 시도
+  const logoutPromises = logoutUrls.map(async (url) => {
+    try {
+      console.log(`서버 로그아웃 시도: ${url}`);
+      
+      // fetch를 사용하여 직접 로그아웃 요청
+      const response = await fetch(url, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      });
+      
+      if (response.ok) {
+        console.log(`✅ 서버 로그아웃 성공: ${url}`);
+      } else {
+        console.warn(`⚠️ 서버 로그아웃 실패: ${url} (${response.status})`);
+      }
+    } catch (error) {
+      console.error(`❌ 서버 로그아웃 에러: ${url}`, error);
+    }
+  });
+  
+  await Promise.all(logoutPromises);
+  console.log('✅ 강력한 서버 로그아웃 완료');
+};
+
+/**
+ * 완전한 다중 도메인 로그아웃 (최종 버전)
+ */
+export const performUltimateLogout = async (): Promise<void> => {
+  console.log('=== 궁극의 다중 도메인 로그아웃 시작 ===');
+  
+  // 1. 강력한 서버 로그아웃 (백엔드 세션 삭제)
+  await forceServerLogout();
+  
+  // 2. 초강력 쿠키 삭제
+  await ultraClearAllCookies();
+  
+  // 3. iframe을 사용한 크로스도메인 쿠키 삭제
+  await clearCookiesViaIframe();
+  
+  // 4. 완전한 브라우저 스토리지 정리
+  await clearAllBrowserStorage();
+  
+  // 5. 로그아웃 시간 기록 (10초로 증가)
+  const logoutTime = Date.now().toString();
+  localStorage.setItem('logoutTime', logoutTime);
+  sessionStorage.setItem('logoutTime', logoutTime);
+  
+  // 6. 추가 쿠키 삭제 시도 (여러 번)
+  for (let i = 0; i < 3; i++) {
+    setTimeout(async () => {
+      await ultraClearAllCookies();
+    }, (i + 1) * 1000);
+  }
+  
+  // 7. 최종 상태 확인
+  setTimeout(() => {
+    checkDomainAndCookies();
+  }, 3000);
+  
+  console.log('✅ 궁극의 다중 도메인 로그아웃 완료');
 }; 
