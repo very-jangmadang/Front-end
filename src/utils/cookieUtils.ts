@@ -1044,9 +1044,10 @@ export const checkSessionBeforeLogout = async (): Promise<boolean> => {
       method: 'GET',
       credentials: 'include',
       headers: {
-        'X-Requested-With': 'XMLHttpRequest',
-        'X-Client-Domain': window.location.hostname,
-        'X-Client-Origin': window.location.origin
+        'X-Requested-With': 'XMLHttpRequest'
+        // CORS 에러 방지를 위해 커스텀 헤더 제거
+        // 'X-Client-Domain': window.location.hostname,
+        // 'X-Client-Origin': window.location.origin
       }
     });
     

@@ -106,9 +106,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             credentials: 'include',
             headers: {
               'Content-Type': 'application/json',
-              'X-Requested-With': 'XMLHttpRequest',
-              'X-Client-Domain': window.location.hostname,
-              'X-Client-Origin': window.location.origin
+              'X-Requested-With': 'XMLHttpRequest'
+              // CORS 에러 방지를 위해 커스텀 헤더 제거
+              // 'X-Client-Domain': window.location.hostname,
+              // 'X-Client-Origin': window.location.origin
             }
           });
           
@@ -133,8 +134,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const requestConfig: any = {
         withCredentials: true, // ✅ 반드시 필요 - 쿠키 전송을 위해
         headers: {
-          'X-Client-Domain': window.location.hostname,
-          'X-Client-Origin': window.location.origin,
+          // CORS 에러 방지를 위해 커스텀 헤더 제거
+          // 'X-Client-Domain': window.location.hostname,
+          // 'X-Client-Origin': window.location.origin,
           'X-Requested-With': 'XMLHttpRequest'
         }
       };
