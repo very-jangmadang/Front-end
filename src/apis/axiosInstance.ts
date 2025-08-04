@@ -1,5 +1,16 @@
 import axios from 'axios';
 
+// 환경 변수 디버깅
+console.log('API 설정 정보:', {
+  baseURL: import.meta.env.VITE_API_BASE_URL,
+  hasAccessToken: !!import.meta.env.VITE_API_ACCESS_TOKEN,
+  currentDomain: window.location.hostname,
+  currentOrigin: window.location.origin,
+  userAgent: navigator.userAgent,
+  cookies: document.cookie,
+  isSecure: window.location.protocol === 'https:'
+});
+
 const axiosInstance = axios.create({
   baseURL: `${import.meta.env.VITE_API_BASE_URL}`,
   headers: {
@@ -11,44 +22,31 @@ const axiosInstance = axios.create({
     })
   },
   withCredentials: true,
+  // 크로스도메인 요청을 위한 추가 설정
   timeout: 10000,
 });
 
 // 요청 인터셉터 추가
 axiosInstance.interceptors.request.use(
   (config) => {
-    // 크로스도메인 요청을 위한 헤더 설정 (CORS 허용된 헤더만)
+    // 크로스도메인 요청을 위한 헤더 설정
     if (config.headers) {
       config.headers['X-Requested-With'] = 'XMLHttpRequest';
-      // CORS 에러 방지를 위해 커스텀 헤더 제거
-      // config.headers['X-Client-Domain'] = window.location.hostname;
-      // config.headers['X-Client-Origin'] = window.location.origin;
+      // 현재 도메인 정보를 헤더에 추가
+      config.headers['X-Client-Domain'] = window.location.hostname;
+      config.headers['X-Client-Origin'] = window.location.origin;
     }
 
-    // 쿠키 상태 상세 분석
-    const cookies = document.cookie;
-    const cookieArray = cookies.split(';').map(c => c.trim());
-    const sessionCookies = cookieArray.filter(cookie => 
-      cookie.toLowerCase().includes('session') || 
-      cookie.toLowerCase().includes('jsessionid') ||
-      cookie.toLowerCase().includes('connect.sid') ||
-      cookie.toLowerCase().includes('access') ||
-      cookie.toLowerCase().includes('refresh')
-    );
-
-    console.log('🔍 API 요청 상세 정보:', {
+    console.log('API 요청:', {
       method: config.method,
       url: config.url,
       baseURL: config.baseURL,
+      fullURL: `${config.baseURL}${config.url}`,
       withCredentials: config.withCredentials,
-      currentDomain: window.location.hostname,
-      currentOrigin: window.location.origin,
-      totalCookies: cookieArray.length,
-      allCookies: cookies,
-      sessionCookies: sessionCookies,
-      hasSessionCookie: sessionCookies.length > 0
+      headers: config.headers,
+      data: config.data,
+      cookies: document.cookie
     });
-
     return config;
   },
   (error) => {
@@ -64,6 +62,7 @@ axiosInstance.interceptors.response.use(
       status: response.status,
       url: response.config.url,
       data: response.data,
+      responseHeaders: response.headers,
       cookiesAfterResponse: document.cookie
     });
     return response;
