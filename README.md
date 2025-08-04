@@ -303,21 +303,71 @@ app.post('/api/permit/logout', (req, res) => {
 - 쿠키 도메인이 동적으로 설정되도록 수정 완료
 - `window.location.hostname`을 사용하여 현재 도메인에 맞게 자동 설정
 
-### 8. 로그아웃 문제 해결
-- 클라이언트 측 쿠키 삭제 로직 추가
-- 로그아웃 후 자동 로그인 방지
-- 간단한 로그아웃 상태 관리
+### 8. 로그아웃 문제 해결 (2024년 업데이트)
 
-#### 7.1 로그아웃 상태 수동 초기화
+#### 8.1 백엔드 세션 무효화 문제
+**핵심 문제**: 백엔드의 `/api/permit/logout` 엔드포인트가 `HttpSession`을 무효화하지 않아서 `jmd-fe.vercel.app`에서 로그아웃 후 새로고침 시 다시 로그인 상태가 되는 문제
+
+**해결 방법**: 백엔드 `UserController.java` 수정 필요
+
+```java
+@PostMapping("api/permit/logout")
+public ApiResponse<?> logout(HttpServletRequest request, HttpServletResponse response) {
+    // 1. 세션 무효화 (가장 중요!)
+    HttpSession session = request.getSession(false);
+    if (session != null) {
+        session.invalidate(); // 세션 완전 삭제
+        log.info("세션 무효화 완료: {}", session.getId());
+    }
+    
+    // 2. JWT 쿠키 삭제
+    Cookie accessCookie = jwtUtil.createCookie("access", null, 0);
+    Cookie refreshCookie = jwtUtil.createCookie("refresh", null, 0);
+    response.addCookie(accessCookie);
+    response.addCookie(refreshCookie);
+    
+    // 3. 세션 쿠키 삭제 (JSESSIONID)
+    Cookie sessionCookie = new Cookie("JSESSIONID", null);
+    sessionCookie.setMaxAge(0);
+    sessionCookie.setPath("/");
+    sessionCookie.setHttpOnly(true);
+    sessionCookie.setSecure(true);
+    
+    // 여러 도메인에서 세션 쿠키 삭제
+    sessionCookie.setDomain(".jangmadang.site");
+    response.addCookie(sessionCookie);
+    sessionCookie.setDomain(".vercel.app");
+    response.addCookie(sessionCookie);
+    sessionCookie.setDomain(request.getServerName());
+    response.addCookie(sessionCookie);
+    
+    return ApiResponse.of(SuccessStatus.USER_LOGOUT_SUCCESS, null);
+}
+```
+
+#### 8.2 프론트엔드 로그아웃 개선
+- 백엔드 세션 무효화 확인을 위한 로깅 추가
+- 로그아웃 후 세션 상태 자동 확인
+- 도메인별 로그아웃 상태 추적
+
+#### 8.3 테스트 방법
+1. 백엔드 코드 수정 후 재배포
+2. `jangmadang.site`에서 로그인
+3. `jmd-fe.vercel.app`에서 로그아웃
+4. 새로고침 후 로그인 상태 확인
+5. `jangmadang.site`에서도 로그아웃 상태인지 확인
+
+#### 8.4 로그아웃 상태 수동 초기화
 로그아웃 후 로그인이 안 되는 경우, 브라우저 개발자 도구 콘솔에서 다음 명령어를 실행하세요:
 
 ```javascript
 // 방법 1: 페이지 새로고침
 window.location.reload();
 
-// 방법 2: AuthContext 함수 사용 (컴포넌트 내에서)
-// const { clearLogoutState } = useAuth();
-// clearLogoutState();
+// 방법 2: 쿠키 수동 삭제
+document.cookie.split(";").forEach(function(c) { 
+    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+});
 ```
 
 ## SVG 파일 최적화 권장사항

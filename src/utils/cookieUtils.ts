@@ -989,4 +989,73 @@ export const performUltimateLogout = async (): Promise<void> => {
   }, 3000);
   
   console.log('✅ 궁극의 다중 도메인 로그아웃 완료');
+};
+
+/**
+ * 세션 쿠키 상태 상세 분석
+ */
+export const analyzeSessionCookies = (): void => {
+  console.log('=== 세션 쿠키 상태 분석 ===');
+  
+  const cookies = document.cookie;
+  const cookieArray = cookies.split(';').map(c => c.trim());
+  
+  console.log('현재 도메인:', window.location.hostname);
+  console.log('현재 URL:', window.location.href);
+  console.log('전체 쿠키 개수:', cookieArray.length);
+  console.log('전체 쿠키:', cookies);
+  
+  // 세션 관련 쿠키 분석
+  const sessionCookies = cookieArray.filter(cookie => 
+    cookie.toLowerCase().includes('session') || 
+    cookie.toLowerCase().includes('jsessionid') ||
+    cookie.toLowerCase().includes('connect.sid')
+  );
+  
+  console.log('세션 관련 쿠키 개수:', sessionCookies.length);
+  console.log('세션 관련 쿠키:', sessionCookies);
+  
+  // JWT 토큰 쿠키 분석
+  const jwtCookies = cookieArray.filter(cookie => 
+    cookie.toLowerCase().includes('access') || 
+    cookie.toLowerCase().includes('refresh')
+  );
+  
+  console.log('JWT 토큰 쿠키 개수:', jwtCookies.length);
+  console.log('JWT 토큰 쿠키:', jwtCookies);
+  
+  // 쿠키 도메인 분석
+  cookieArray.forEach(cookie => {
+    const [name, value] = cookie.split('=');
+    console.log(`쿠키: ${name} = ${value?.substring(0, 20)}...`);
+  });
+  
+  console.log('=== 세션 쿠키 분석 완료 ===');
+};
+
+/**
+ * 로그아웃 전 세션 상태 확인
+ */
+export const checkSessionBeforeLogout = async (): Promise<boolean> => {
+  console.log('=== 로그아웃 전 세션 상태 확인 ===');
+  
+  try {
+    const response = await fetch('/api/permit/user-info', {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-Client-Domain': window.location.hostname,
+        'X-Client-Origin': window.location.origin
+      }
+    });
+    
+    const data = await response.json();
+    console.log('세션 상태 확인 결과:', data);
+    
+    return data.result === 'user';
+  } catch (error) {
+    console.error('세션 상태 확인 실패:', error);
+    return false;
+  }
 }; 

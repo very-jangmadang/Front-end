@@ -20,15 +20,34 @@ axiosInstance.interceptors.request.use(
     // 크로스도메인 요청을 위한 헤더 설정
     if (config.headers) {
       config.headers['X-Requested-With'] = 'XMLHttpRequest';
+      config.headers['X-Client-Domain'] = window.location.hostname;
+      config.headers['X-Client-Origin'] = window.location.origin;
     }
 
-    console.log('API 요청:', {
+    // 쿠키 상태 상세 분석
+    const cookies = document.cookie;
+    const cookieArray = cookies.split(';').map(c => c.trim());
+    const sessionCookies = cookieArray.filter(cookie => 
+      cookie.toLowerCase().includes('session') || 
+      cookie.toLowerCase().includes('jsessionid') ||
+      cookie.toLowerCase().includes('connect.sid') ||
+      cookie.toLowerCase().includes('access') ||
+      cookie.toLowerCase().includes('refresh')
+    );
+
+    console.log('🔍 API 요청 상세 정보:', {
       method: config.method,
       url: config.url,
       baseURL: config.baseURL,
       withCredentials: config.withCredentials,
-      cookies: document.cookie
+      currentDomain: window.location.hostname,
+      currentOrigin: window.location.origin,
+      totalCookies: cookieArray.length,
+      allCookies: cookies,
+      sessionCookies: sessionCookies,
+      hasSessionCookie: sessionCookies.length > 0
     });
+
     return config;
   },
   (error) => {
