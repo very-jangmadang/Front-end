@@ -411,4 +411,195 @@ export const optimizeCookieSettings = (): void => {
     console.log('- Secure=true 설정 (HTTPS 환경)');
     console.log('- HttpOnly=true 설정 (보안용)');
   }
+};
+
+/**
+ * 서버 하나에 도메인 두 개 연결 시 로그아웃 문제 해결
+ */
+export const solveMultiDomainLogoutIssue = async (): Promise<void> => {
+  console.log('=== 서버 하나에 도메인 두 개 연결 시 로그아웃 문제 해결 ===');
+  
+  const currentDomain = window.location.hostname;
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+  
+  console.log('현재 상황:', {
+    currentDomain,
+    apiBaseUrl,
+    protocol: window.location.protocol
+  });
+  
+  // 1. 모든 도메인의 쿠키 삭제
+  console.log('1단계: 모든 도메인의 쿠키 삭제');
+  
+  const domainsToClear = [
+    currentDomain,
+    '.jangmadang.site',
+    '.vercel.app',
+    'localhost',
+    '.localhost'
+  ];
+  
+  const cookiesToDelete = ['access', 'refresh', 'connect.sid', 'sessionId'];
+  
+  cookiesToDelete.forEach(cookieName => {
+    domainsToClear.forEach(domain => {
+      const deleteOptions = [
+        `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`,
+        `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${domain};`,
+        `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.${domain};`,
+        `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure;`,
+        `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax;`,
+        `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Strict;`,
+      ];
+      
+      deleteOptions.forEach(option => {
+        try {
+          document.cookie = option;
+        } catch (error) {
+          console.warn(`쿠키 삭제 실패 (${cookieName} on ${domain}):`, option, error);
+        }
+      });
+    });
+  });
+  
+  // 2. 서버 로그아웃 요청 (모든 도메인에 대해)
+  console.log('2단계: 서버 로그아웃 요청');
+  
+  try {
+    const response = await fetch(`${apiBaseUrl}/api/permit/logout`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    });
+    
+    console.log('서버 로그아웃 응답:', response.status);
+    
+    if (response.ok) {
+      console.log('✅ 서버 로그아웃 성공');
+    } else {
+      console.log('❌ 서버 로그아웃 실패');
+    }
+  } catch (error) {
+    console.error('❌ 서버 로그아웃 에러:', error);
+  }
+  
+  // 3. 브라우저 캐시 및 스토리지 정리
+  console.log('3단계: 브라우저 캐시 및 스토리지 정리');
+  
+  // localStorage 정리
+  try {
+    localStorage.clear();
+    console.log('✅ localStorage 정리 완료');
+  } catch (error) {
+    console.warn('localStorage 정리 실패:', error);
+  }
+  
+  // sessionStorage 정리
+  try {
+    sessionStorage.clear();
+    console.log('✅ sessionStorage 정리 완료');
+  } catch (error) {
+    console.warn('sessionStorage 정리 실패:', error);
+  }
+  
+  // 캐시 정리
+  if ('caches' in window) {
+    try {
+      const cacheNames = await caches.keys();
+      await Promise.all(cacheNames.map(name => caches.delete(name)));
+      console.log('✅ 브라우저 캐시 정리 완료');
+    } catch (error) {
+      console.warn('브라우저 캐시 정리 실패:', error);
+    }
+  }
+  
+  // 4. 최종 상태 확인
+  console.log('4단계: 최종 상태 확인');
+  checkDomainAndCookies();
+  
+  console.log('✅ 다중 도메인 로그아웃 문제 해결 완료');
+  console.log('💡 해결 방안:');
+  console.log('1. 백엔드에서 세션을 도메인별로 분리하거나');
+  console.log('2. 공통 도메인(.jangmadang.site)으로 세션 설정');
+  console.log('3. 각 도메인별로 별도 서버 사용 고려');
+};
+
+/**
+ * 백엔드 세션 설정 권장사항
+ */
+export const getBackendSessionRecommendations = (): void => {
+  console.log('=== 백엔드 세션 설정 권장사항 ===');
+  
+  console.log('🔧 해결 방안 1: 도메인별 세션 분리');
+  console.log('```javascript');
+  console.log('// Express.js 세션 설정');
+  console.log('const session = require(\'express-session\');');
+  console.log('');
+  console.log('app.use(session({');
+  console.log('  secret: \'your-secret-key\',');
+  console.log('  resave: false,');
+  console.log('  saveUninitialized: false,');
+  console.log('  cookie: {');
+  console.log('    httpOnly: true,');
+  console.log('    secure: true,');
+  console.log('    sameSite: \'none\',');
+  console.log('    domain: \'.jangmadang.site\', // 공통 도메인');
+  console.log('    maxAge: 24 * 60 * 60 * 1000');
+  console.log('  }');
+  console.log('}));');
+  console.log('```');
+  
+  console.log('');
+  console.log('🔧 해결 방안 2: 로그아웃 시 모든 도메인 쿠키 삭제');
+  console.log('```javascript');
+  console.log('// 로그아웃 API');
+  console.log('app.post(\'/api/permit/logout\', (req, res) => {');
+  console.log('  req.session.destroy((err) => {');
+  console.log('    if (err) {');
+  console.log('      return res.status(500).json({ error: \'로그아웃 실패\' });');
+  console.log('    }');
+  console.log('    ');
+  console.log('    // 모든 도메인의 쿠키 삭제');
+  console.log('    res.clearCookie(\'connect.sid\', {');
+  console.log('      domain: \'.jangmadang.site\'');
+  console.log('    });');
+  console.log('    res.clearCookie(\'access\', {');
+  console.log('      domain: \'.jangmadang.site\'');
+  console.log('    });');
+  console.log('    res.clearCookie(\'refresh\', {');
+  console.log('      domain: \'.jangmadang.site\'');
+  console.log('    });');
+  console.log('    ');
+  console.log('    res.json({ success: true });');
+  console.log('  });');
+  console.log('});');
+  console.log('```');
+  
+  console.log('');
+  console.log('🔧 해결 방안 3: 세션 스토어 사용');
+  console.log('```javascript');
+  console.log('// Redis 세션 스토어 사용');
+  console.log('const RedisStore = require(\'connect-redis\').default;');
+  console.log('const redis = require(\'redis\');');
+  console.log('');
+  console.log('const redisClient = redis.createClient();');
+  console.log('const redisStore = new RedisStore({ client: redisClient });');
+  console.log('');
+  console.log('app.use(session({');
+  console.log('  store: redisStore,');
+  console.log('  secret: \'your-secret-key\',');
+  console.log('  resave: false,');
+  console.log('  saveUninitialized: false,');
+  console.log('  cookie: {');
+  console.log('    httpOnly: true,');
+  console.log('    secure: true,');
+  console.log('    sameSite: \'none\',');
+  console.log('    domain: \'.jangmadang.site\'');
+  console.log('  }');
+  console.log('}));');
+  console.log('```');
 }; 

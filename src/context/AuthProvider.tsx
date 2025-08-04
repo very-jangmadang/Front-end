@@ -91,7 +91,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // 로그아웃 함수
   const logout = async () => {
-    console.log('=== 강력한 로그아웃 시작 ===');
+    console.log('=== 강력한 로그아웃 시작 (다중 도메인 대응) ===');
     checkDomainAndCookies(); // 로그아웃 전 상태 확인
     showCookieDebugInfo(); // 디버깅 안내
     
@@ -131,35 +131,66 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     }
     
-    // 2단계: 클라이언트 측 강력한 쿠키 정리
-    console.log('2단계: 클라이언트 측 강력한 쿠키 정리 시작');
+    // 2단계: 다중 도메인 쿠키 정리
+    console.log('2단계: 다중 도메인 쿠키 정리 시작');
     
-    // 모든 쿠키 삭제
-    clearAllCookies();
+    const domainsToClear = [
+      window.location.hostname,
+      '.jangmadang.site',
+      '.vercel.app',
+      'localhost',
+      '.localhost'
+    ];
     
-    // 인증 쿠키 특별 처리
-    console.log('3단계: 인증 쿠키 특별 삭제');
-    clearSpecificCookies(['access', 'refresh']);
+    const cookiesToDelete = ['access', 'refresh', 'connect.sid', 'sessionId'];
     
-    // 4단계: 추가 삭제 시도 (SameSite=None + Secure 문제 해결)
-    console.log('4단계: SameSite 문제 해결을 위한 추가 삭제');
-    const authCookies = ['access', 'refresh'];
-    authCookies.forEach(cookieName => {
-      // SameSite=None + Secure 설정으로 삭제 시도
-      const sameSiteOptions = [
-        `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure;`,
-        `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax;`,
-        `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Strict;`,
-      ];
-      
-      sameSiteOptions.forEach(option => {
-        try {
-          document.cookie = option;
-        } catch (error) {
-          console.warn(`SameSite 쿠키 삭제 실패 (${cookieName}):`, option, error);
-        }
+    // 모든 도메인의 모든 쿠키 삭제
+    cookiesToDelete.forEach(cookieName => {
+      domainsToClear.forEach(domain => {
+        const deleteOptions = [
+          `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`,
+          `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${domain};`,
+          `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.${domain};`,
+          `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure;`,
+          `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax;`,
+          `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Strict;`,
+        ];
+        
+        deleteOptions.forEach(option => {
+          try {
+            document.cookie = option;
+          } catch (error) {
+            console.warn(`쿠키 삭제 실패 (${cookieName} on ${domain}):`, option, error);
+          }
+        });
       });
     });
+    
+    // 3단계: 브라우저 스토리지 정리
+    console.log('3단계: 브라우저 스토리지 정리');
+    
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+      console.log('✅ 브라우저 스토리지 정리 완료');
+    } catch (error) {
+      console.warn('브라우저 스토리지 정리 실패:', error);
+    }
+    
+    // 4단계: 브라우저 캐시 정리
+    console.log('4단계: 브라우저 캐시 정리');
+    if ('caches' in window) {
+      try {
+        caches.keys().then(names => {
+          names.forEach(name => {
+            caches.delete(name);
+          });
+        });
+        console.log('✅ 브라우저 캐시 정리 완료');
+      } catch (error) {
+        console.warn('브라우저 캐시 정리 실패:', error);
+      }
+    }
     
     // 5단계: 최종 상태 확인
     console.log('5단계: 로그아웃 후 최종 쿠키 상태 확인');
@@ -170,21 +201,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     // 6단계: 완료 처리
     setTimeout(() => {
-      console.log('✅ 강력한 로그아웃 완료 - 홈으로 이동');
+      console.log('✅ 다중 도메인 로그아웃 완료 - 홈으로 이동');
       setIsLoggingOut(false);
-      
-      // 브라우저 캐시도 함께 정리
-      if ('caches' in window) {
-        caches.keys().then(names => {
-          names.forEach(name => {
-            caches.delete(name);
-          });
-        });
-      }
       
       // 강제 새로고침으로 완전한 상태 초기화
       window.location.reload();
-    }, 1500); // 시간을 조금 더 늘려서 쿠키 삭제 완료 보장
+    }, 2000); // 시간을 더 늘려서 모든 쿠키 삭제 완료 보장
   };
 
   // 리프레시 토큰 요청 함수

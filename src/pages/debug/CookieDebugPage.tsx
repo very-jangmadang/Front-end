@@ -14,7 +14,9 @@ import {
   diagnoseCrossDomainCookieIssue,
   testCrossDomainCookie,
   attemptCrossDomainCookieFix,
-  optimizeCookieSettings
+  optimizeCookieSettings,
+  solveMultiDomainLogoutIssue,
+  getBackendSessionRecommendations
 } from '../../utils/cookieUtils';
 import axiosInstance from '../../apis/axiosInstance';
 
@@ -141,6 +143,18 @@ const CookieDebugPage: React.FC = () => {
     addDebugInfo('콘솔에서 환경별 최적화 권장사항을 확인하세요.');
   };
 
+  const handleSolveMultiDomainLogout = async () => {
+    addDebugInfo('=== 서버 하나에 도메인 두 개 연결 시 로그아웃 문제 해결 ===');
+    await solveMultiDomainLogoutIssue();
+    addDebugInfo('콘솔에서 다중 도메인 로그아웃 문제 해결 결과를 확인하세요.');
+  };
+
+  const handleGetBackendRecommendations = () => {
+    addDebugInfo('=== 백엔드 세션 설정 권장사항 ===');
+    getBackendSessionRecommendations();
+    addDebugInfo('콘솔에서 백엔드 세션 설정 권장사항을 확인하세요.');
+  };
+
   return (
     <Container>
       <Title>쿠키 디버깅 페이지</Title>
@@ -190,6 +204,12 @@ const CookieDebugPage: React.FC = () => {
         </Button>
         <Button onClick={handleOptimizeCookieSettings} style={{ backgroundColor: '#20c997' }}>
           환경별 최적화
+        </Button>
+        <Button onClick={handleSolveMultiDomainLogout} style={{ backgroundColor: '#dc3545' }}>
+          다중도메인 로그아웃 해결
+        </Button>
+        <Button onClick={handleGetBackendRecommendations} style={{ backgroundColor: '#6c757d' }}>
+          백엔드 권장사항
         </Button>
       </ButtonGroup>
 
