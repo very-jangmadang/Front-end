@@ -74,6 +74,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       if (response.status === 200) {
         console.log('✅ 백엔드 로그아웃 성공:', response.data);
+        
+        // 백엔드에서 쿠키 삭제가 안 될 경우를 대비한 클라이언트 측 쿠키 삭제
+        const cookiesToDelete = ['JSESSIONID', 'access', 'refresh', 'idtoken'];
+        cookiesToDelete.forEach(cookieName => {
+          document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+          document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.jangmadang.site;`;
+        });
+        
         setIsAuthenticated(false);
         window.location.replace('/');
       }
