@@ -1,7 +1,6 @@
 import { useState, useEffect, ReactNode } from 'react';
 import { AuthContext, AuthContextType } from './AuthContext';
 import axiosInstance from '../apis/axiosInstance';
-import { analyzeSessionCookies, checkSessionBeforeLogout } from '../utils/cookieUtils';
 
 const MAX_RETRIES = 1; // 재시도 횟수를 제한 (예: 1번)
 
@@ -53,89 +52,38 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // 로그아웃 함수
+  // 로그아웃 함수 (CORS 에러 방지)
   const logout = async () => {
     console.log('=== 로그아웃 시작 ===');
     console.log('현재 도메인:', window.location.hostname);
     console.log('현재 URL:', window.location.href);
-    
-    // 쿠키 상태 확인
     console.log('현재 쿠키:', document.cookie);
-    console.log('쿠키 개수:', document.cookie.split(';').length);
-    
-    // 세션 관련 쿠키 확인
-    const cookies = document.cookie.split(';');
-    const sessionCookies = cookies.filter(cookie => 
-      cookie.trim().toLowerCase().includes('session') || 
-      cookie.trim().toLowerCase().includes('jsessionid') ||
-      cookie.trim().toLowerCase().includes('connect.sid')
-    );
-    console.log('세션 관련 쿠키:', sessionCookies);
     
     try {
-      // 로그아웃 전 인증 상태 확인
-      console.log('로그아웃 전 인증 상태:', isAuthenticated);
-      
-      // API 설정 정보 확인
-      console.log('API 설정 정보:', {
-        baseURL: import.meta.env.VITE_API_BASE_URL,
-        hasAccessToken: !!import.meta.env.VITE_API_ACCESS_TOKEN,
-        currentDomain: window.location.hostname
-      });
-      
-      // 쿠키 강제 전송을 위한 추가 설정
-      const requestConfig: any = {
-        withCredentials: true,
-        headers: {
-          'X-Client-Domain': window.location.hostname,
-          'X-Client-Origin': window.location.origin,
-          'X-Requested-With': 'XMLHttpRequest'
-        }
-      };
-
-      // 현재 쿠키를 헤더에 명시적으로 포함 (백업 방법)
-      const cookies = document.cookie;
-      if (cookies) {
-        requestConfig.headers['Cookie'] = cookies;
-      }
-
-      console.log('로그아웃 요청 설정:', requestConfig);
-      
+      // 간단한 로그아웃 요청 (CORS 허용된 헤더만)
       const response = await axiosInstance.post(
         '/api/permit/logout',
         {},
-        requestConfig
+        {
+          withCredentials: true, // ✅ 반드시 필요 - 쿠키 전송을 위해
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest' // 일반적으로 허용됨
+          }
+        }
       );
       
       if (response.status === 200) {
         console.log('✅ 백엔드 로그아웃 성공:', response.data);
         setIsAuthenticated(false);
-        
-        // 로그아웃 후 세션 상태 확인 (디버깅용)
-        setTimeout(async () => {
-          try {
-            const checkResponse = await axiosInstance.get('/api/permit/user-info', {
-              withCredentials: true,
-            });
-            console.log('로그아웃 후 세션 상태 확인:', checkResponse.data);
-          } catch (checkError) {
-            console.log('로그아웃 후 세션 확인 실패 (예상됨):', checkError);
-          }
-        }, 1000);
-        
         window.location.replace('/');
       }
     } catch (error: any) {
-      if (error.response) {
-        console.error('❌ 로그아웃 중 에러 발생:', {
-          status: error.response.status,
-          responseCode: error.response.data?.code,
-          message: error.response.data?.message,
-          headers: error.response.headers,
-        });
-      } else {
-        console.error('❌ 로그아웃 중 에러 발생:', error);
-      }
+      console.error('❌ 로그아웃 중 에러 발생:', error);
+      
+      // 에러가 발생해도 클라이언트 측에서 로그아웃 처리
+      console.log('클라이언트 측에서 로그아웃 처리합니다.');
+      setIsAuthenticated(false);
+      window.location.replace('/');
     }
   };
 

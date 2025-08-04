@@ -29,12 +29,12 @@ const axiosInstance = axios.create({
 // 요청 인터셉터 추가
 axiosInstance.interceptors.request.use(
   (config) => {
-    // 크로스도메인 요청을 위한 헤더 설정
+    // 크로스도메인 요청을 위한 헤더 설정 (CORS 허용된 헤더만)
     if (config.headers) {
       config.headers['X-Requested-With'] = 'XMLHttpRequest';
-      // 현재 도메인 정보를 헤더에 추가
-      config.headers['X-Client-Domain'] = window.location.hostname;
-      config.headers['X-Client-Origin'] = window.location.origin;
+      // CORS 에러 방지를 위해 커스텀 헤더 제거
+      // config.headers['X-Client-Domain'] = window.location.hostname;
+      // config.headers['X-Client-Origin'] = window.location.origin;
     }
 
     console.log('API 요청:', {

@@ -20,10 +20,9 @@ import {
   preventAutoLoginAfterLogout,
   clearLogoutPrevention,
   ultraClearAllCookies,
+  clearCookiesViaIframe,
   clearAllBrowserStorage,
   performCompleteLogout,
-  forceServerLogout,
-  performUltimateLogout
 } from '../../utils/cookieUtils';
 import axiosInstance from '../../apis/axiosInstance';
 
@@ -180,7 +179,11 @@ const CookieDebugPage: React.FC = () => {
     addDebugInfo('초강력 쿠키 삭제 완료');
   };
 
-
+  const handleClearCookiesViaIframe = async () => {
+    addDebugInfo('=== iframe을 사용한 크로스도메인 쿠키 삭제 시작 ===');
+    await clearCookiesViaIframe();
+    addDebugInfo('iframe을 사용한 크로스도메인 쿠키 삭제 완료');
+  };
 
   const handleClearAllBrowserStorage = async () => {
     addDebugInfo('=== 완전한 브라우저 스토리지 정리 시작 ===');
@@ -192,18 +195,6 @@ const CookieDebugPage: React.FC = () => {
     addDebugInfo('=== 완전한 로그아웃 시작 ===');
     await performCompleteLogout();
     addDebugInfo('완전한 로그아웃 완료');
-  };
-
-  const handleForceServerLogout = async () => {
-    addDebugInfo('=== 강력한 서버 로그아웃 시작 ===');
-    await forceServerLogout();
-    addDebugInfo('강력한 서버 로그아웃 완료');
-  };
-
-  const handlePerformUltimateLogout = async () => {
-    addDebugInfo('=== 궁극의 다중 도메인 로그아웃 시작 ===');
-    await performUltimateLogout();
-    addDebugInfo('궁극의 다중 도메인 로그아웃 완료');
   };
 
   return (
@@ -271,18 +262,14 @@ const CookieDebugPage: React.FC = () => {
         <Button onClick={handleUltraClearCookies} style={{ backgroundColor: '#8e44ad' }}>
           초강력 쿠키 삭제
         </Button>
-
+        <Button onClick={handleClearCookiesViaIframe} style={{ backgroundColor: '#e67e22' }}>
+          iframe 쿠키 삭제
+        </Button>
         <Button onClick={handleClearAllBrowserStorage} style={{ backgroundColor: '#27ae60' }}>
           브라우저 스토리지 정리
         </Button>
         <Button onClick={handlePerformCompleteLogout} style={{ backgroundColor: '#c0392b' }}>
           완전한 로그아웃
-        </Button>
-        <Button onClick={handleForceServerLogout} style={{ backgroundColor: '#8e44ad' }}>
-          강력한 서버 로그아웃
-        </Button>
-        <Button onClick={handlePerformUltimateLogout} style={{ backgroundColor: '#2c3e50' }}>
-          궁극의 로그아웃
         </Button>
       </ButtonGroup>
 
