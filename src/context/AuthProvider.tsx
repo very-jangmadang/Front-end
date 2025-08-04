@@ -10,6 +10,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // 로그인 함수
   const login = async (retryCount = 0) => {
+    // 로그아웃 후 재로그인 방지 체크
+    const logoutTime = localStorage.getItem('logoutTime');
+    if (logoutTime) {
+      const timeSinceLogout = Date.now() - parseInt(logoutTime);
+      if (timeSinceLogout < 5000) { // 5초 이내면 재로그인 방지
+        console.log('⚠️ 로그아웃 후 5초 이내 재로그인 시도 감지, 방지합니다.');
+        setIsAuthenticated(false);
+        return;
+      } else {
+        // 5초가 지났으면 로그아웃 시간 기록 삭제
+        localStorage.removeItem('logoutTime');
+      }
+    }
+    
     try {
       const { data } = await axiosInstance.get('/api/permit/user-info', {
         withCredentials: true,
@@ -75,15 +89,40 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (response.status === 200) {
         console.log('✅ 백엔드 로그아웃 성공:', response.data);
         
-        // 백엔드에서 쿠키 삭제가 안 될 경우를 대비한 클라이언트 측 쿠키 삭제
+        // 양쪽 도메인에서 모두 쿠키 삭제 (크로스도메인 문제 해결)
         const cookiesToDelete = ['JSESSIONID', 'access', 'refresh', 'idtoken'];
+        
         cookiesToDelete.forEach(cookieName => {
+          // 1. 현재 도메인에서 삭제
           document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+          
+          // 2. jangmadang.site 도메인에서 삭제
           document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.jangmadang.site;`;
+          
+          // 3. api.jangmadang.site 도메인에서 삭제
+          document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.api.jangmadang.site;`;
+          
+          // 4. vercel.app 도메인에서 삭제
+          document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.vercel.app;`;
+          
+          // 5. 현재 도메인에서 다시 삭제 (확실히)
+          document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${window.location.hostname};`;
         });
         
+        console.log('✅ 양쪽 도메인에서 쿠키 삭제 완료');
+        console.log('삭제 후 쿠키:', document.cookie);
+        
+        // 브라우저 스토리지도 정리
+        localStorage.clear();
+        sessionStorage.clear();
+        
+        // 로그아웃 시간 기록 (재로그인 방지)
+        localStorage.setItem('logoutTime', Date.now().toString());
+        
         setIsAuthenticated(false);
-        window.location.replace('/');
+        
+        // 강제로 페이지 새로고침 (완전한 로그아웃)
+        window.location.href = '/';
       }
     } catch (error: any) {
       console.error('❌ 로그아웃 중 에러 발생:', error);
