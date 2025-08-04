@@ -98,7 +98,39 @@ res.redirect('https://jmd-fe.vercel.app/kakao');
 - 쿠키 도메인을 `window.location.hostname`으로 동적 설정
 - 세션 기반 인증 방식 유지
 
-### 6. 크로스도메인 쿠키 문제 해결 가이드
+### 6. 강화된 로그아웃 시스템 (2024년 업데이트)
+
+#### 문제 상황
+- 두 도메인(`jangmadang.site`, `jmd-fe.vercel.app`)에서 쿠키가 완전히 삭제되지 않음
+- 로그아웃 후 새로고침 시 자동으로 다시 로그인되는 문제
+
+#### 해결책
+1. **초강력 쿠키 삭제**: 모든 가능한 도메인과 경로에서 쿠키 삭제
+2. **iframe을 사용한 크로스도메인 쿠키 삭제**: 다른 도메인의 쿠키도 삭제
+3. **완전한 브라우저 스토리지 정리**: localStorage, sessionStorage, IndexedDB, 캐시, 서비스워커 모두 정리
+4. **자동 로그인 방지**: 로그아웃 후 5초간 로그인 체크 방지
+
+#### 새로운 유틸리티 함수들
+```typescript
+// 초강력 쿠키 삭제
+await ultraClearAllCookies();
+
+// iframe을 사용한 크로스도메인 쿠키 삭제
+await clearCookiesViaIframe();
+
+// 완전한 브라우저 스토리지 정리
+await clearAllBrowserStorage();
+
+// 완전한 로그아웃 (모든 정리 작업 포함)
+await performCompleteLogout();
+```
+
+#### 디버깅 도구
+- `/debug` 페이지에서 쿠키 상태 확인 및 수동 정리 가능
+- 콘솔에서 상세한 로그 확인 가능
+- 각 단계별 진행 상황 모니터링
+
+### 7. 크로스도메인 쿠키 문제 해결 가이드
 
 #### 문제 상황
 - `jangmadang.site`에서는 정상적으로 쿠키가 설정됨

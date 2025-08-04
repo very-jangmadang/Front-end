@@ -631,13 +631,211 @@ export const preventAutoLoginAfterLogout = (): void => {
  * 로그아웃 후 자동 로그인 방지 해제
  */
 export const clearLogoutPrevention = (): void => {
-  console.log('=== 로그아웃 후 자동 로그인 방지 해제 ===');
-  
-  // 로그아웃 관련 데이터 삭제
+  console.log('=== 자동 로그인 방지 해제 ===');
   localStorage.removeItem('logoutTime');
-  localStorage.removeItem('isLoggingOut');
   sessionStorage.removeItem('logoutTime');
-  sessionStorage.removeItem('isLoggingOut');
+  console.log('✅ 자동 로그인 방지 해제 완료');
+};
+
+/**
+ * 초강력 다중 도메인 쿠키 삭제 함수
+ * 모든 가능한 도메인과 경로에서 쿠키를 삭제합니다.
+ */
+export const ultraClearAllCookies = async (): Promise<void> => {
+  console.log('=== 초강력 다중 도메인 쿠키 삭제 시작 ===');
   
-  console.log('✅ 로그아웃 후 자동 로그인 방지 해제 완료');
+  const domainsToClear = [
+    window.location.hostname,
+    '.jangmadang.site',
+    '.vercel.app',
+    'localhost',
+    '.localhost',
+    'www.jangmadang.site',
+    'www.vercel.app',
+    'jangmadang.site',
+    'jmd-fe.vercel.app',
+    '.site',
+    '.app'
+  ];
+  
+  const cookiesToDelete = [
+    'access', 'refresh', 'connect.sid', 'sessionId', 'JSESSIONID', 
+    'PHPSESSID', 'ASP.NET_SessionId', 'idtoken', 'token', 'auth', 
+    'session', 'user', 'login', 'remember', 'persist'
+  ];
+  
+  const pathsToTry = ['/', '/api', '/api/', '/permit', '/permit/'];
+  
+  // 5번 반복하여 확실히 삭제
+  for (let attempt = 1; attempt <= 5; attempt++) {
+    console.log(`초강력 쿠키 삭제 시도 ${attempt}/5`);
+    
+    cookiesToDelete.forEach(cookieName => {
+      domainsToClear.forEach(domain => {
+        pathsToTry.forEach(path => {
+          const deleteOptions = [
+            `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=${path};`,
+            `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=${path}; domain=${domain};`,
+            `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=${path}; domain=.${domain};`,
+            `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=${path}; SameSite=None; Secure;`,
+            `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=${path}; SameSite=Lax;`,
+            `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=${path}; SameSite=Strict;`,
+            `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=${path}; max-age=0;`,
+            `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=${path}; max-age=-1;`,
+            `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=${path}; domain=${domain}; SameSite=None; Secure;`,
+            `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=${path}; domain=.${domain}; SameSite=Lax;`,
+          ];
+          
+          deleteOptions.forEach(option => {
+            try {
+              document.cookie = option;
+            } catch (error) {
+              console.warn(`초강력 쿠키 삭제 실패 (${cookieName} on ${domain}${path}):`, option, error);
+            }
+          });
+        });
+      });
+    });
+    
+    if (attempt < 5) {
+      await new Promise(resolve => setTimeout(resolve, 200));
+    }
+  }
+  
+  console.log('✅ 초강력 다중 도메인 쿠키 삭제 완료');
+};
+
+/**
+ * iframe을 사용한 크로스도메인 쿠키 삭제 함수
+ */
+export const clearCookiesViaIframe = async (): Promise<void> => {
+  console.log('=== iframe을 사용한 크로스도메인 쿠키 삭제 시작 ===');
+  
+  const crossDomainUrls = [
+    'https://jangmadang.site',
+    'https://www.jangmadang.site',
+    'https://jmd-fe.vercel.app'
+  ];
+  
+  const iframePromises = crossDomainUrls.map(url => {
+    return new Promise<void>((resolve) => {
+      try {
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.src = `${url}/api/permit/logout`;
+        iframe.onload = () => {
+          console.log(`iframe 로드 완료: ${url}`);
+          setTimeout(() => {
+            if (document.body.contains(iframe)) {
+              document.body.removeChild(iframe);
+            }
+            resolve();
+          }, 1000);
+        };
+        iframe.onerror = () => {
+          console.warn(`iframe 로드 실패: ${url}`);
+          resolve();
+        };
+        document.body.appendChild(iframe);
+      } catch (error) {
+        console.warn(`iframe 생성 실패 (${url}):`, error);
+        resolve();
+      }
+    });
+  });
+  
+  await Promise.all(iframePromises);
+  console.log('✅ iframe을 사용한 크로스도메인 쿠키 삭제 완료');
+};
+
+/**
+ * 완전한 브라우저 스토리지 정리 함수
+ */
+export const clearAllBrowserStorage = async (): Promise<void> => {
+  console.log('=== 완전한 브라우저 스토리지 정리 시작 ===');
+  
+  try {
+    // localStorage 정리
+    localStorage.clear();
+    console.log('✅ localStorage 정리 완료');
+    
+    // sessionStorage 정리
+    sessionStorage.clear();
+    console.log('✅ sessionStorage 정리 완료');
+    
+    // IndexedDB 정리
+    if ('indexedDB' in window) {
+      try {
+        const databases = await indexedDB.databases();
+        const deletePromises = databases.map(db => {
+          if (db.name) {
+            return indexedDB.deleteDatabase(db.name);
+          }
+          return Promise.resolve();
+        });
+        await Promise.all(deletePromises);
+        console.log('✅ IndexedDB 정리 완료');
+      } catch (error) {
+        console.warn('IndexedDB 정리 실패:', error);
+      }
+    }
+    
+    // WebSQL 확인 (구형 브라우저용)
+    if ('openDatabase' in window) {
+      console.log('WebSQL 데이터베이스 존재 확인 완료');
+    }
+    
+    // 브라우저 캐시 정리
+    if ('caches' in window) {
+      try {
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map(name => caches.delete(name)));
+        console.log('✅ 브라우저 캐시 정리 완료');
+      } catch (error) {
+        console.warn('브라우저 캐시 정리 실패:', error);
+      }
+    }
+    
+    // 서비스 워커 정리
+    if ('serviceWorker' in navigator) {
+      try {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(registrations.map(registration => registration.unregister()));
+        console.log('✅ 서비스 워커 정리 완료');
+      } catch (error) {
+        console.warn('서비스 워커 정리 실패:', error);
+      }
+    }
+    
+    console.log('✅ 완전한 브라우저 스토리지 정리 완료');
+  } catch (error) {
+    console.error('브라우저 스토리지 정리 중 오류:', error);
+  }
+};
+
+/**
+ * 완전한 로그아웃 함수 (모든 정리 작업 포함)
+ */
+export const performCompleteLogout = async (): Promise<void> => {
+  console.log('=== 완전한 로그아웃 시작 ===');
+  
+  // 1. 초강력 쿠키 삭제
+  await ultraClearAllCookies();
+  
+  // 2. iframe을 사용한 크로스도메인 쿠키 삭제
+  await clearCookiesViaIframe();
+  
+  // 3. 완전한 브라우저 스토리지 정리
+  await clearAllBrowserStorage();
+  
+  // 4. 로그아웃 시간 기록
+  localStorage.setItem('logoutTime', Date.now().toString());
+  sessionStorage.setItem('logoutTime', Date.now().toString());
+  
+  // 5. 최종 쿠키 상태 확인
+  setTimeout(() => {
+    checkDomainAndCookies();
+  }, 1000);
+  
+  console.log('✅ 완전한 로그아웃 완료');
 }; 

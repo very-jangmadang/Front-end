@@ -18,7 +18,11 @@ import {
   solveMultiDomainLogoutIssue,
   getBackendSessionRecommendations,
   preventAutoLoginAfterLogout,
-  clearLogoutPrevention
+  clearLogoutPrevention,
+  ultraClearAllCookies,
+  clearCookiesViaIframe,
+  clearAllBrowserStorage,
+  performCompleteLogout
 } from '../../utils/cookieUtils';
 import axiosInstance from '../../apis/axiosInstance';
 
@@ -169,6 +173,30 @@ const CookieDebugPage: React.FC = () => {
     addDebugInfo('콘솔에서 자동 로그인 방지 해제 결과를 확인하세요.');
   };
 
+  const handleUltraClearCookies = async () => {
+    addDebugInfo('=== 초강력 쿠키 삭제 시작 ===');
+    await ultraClearAllCookies();
+    addDebugInfo('초강력 쿠키 삭제 완료');
+  };
+
+  const handleClearCookiesViaIframe = async () => {
+    addDebugInfo('=== iframe을 사용한 크로스도메인 쿠키 삭제 시작 ===');
+    await clearCookiesViaIframe();
+    addDebugInfo('iframe을 사용한 크로스도메인 쿠키 삭제 완료');
+  };
+
+  const handleClearAllBrowserStorage = async () => {
+    addDebugInfo('=== 완전한 브라우저 스토리지 정리 시작 ===');
+    await clearAllBrowserStorage();
+    addDebugInfo('완전한 브라우저 스토리지 정리 완료');
+  };
+
+  const handlePerformCompleteLogout = async () => {
+    addDebugInfo('=== 완전한 로그아웃 시작 ===');
+    await performCompleteLogout();
+    addDebugInfo('완전한 로그아웃 완료');
+  };
+
   return (
     <Container>
       <Title>쿠키 디버깅 페이지</Title>
@@ -230,6 +258,18 @@ const CookieDebugPage: React.FC = () => {
         </Button>
         <Button onClick={handleClearLogoutPrevention} style={{ backgroundColor: '#17a2b8' }}>
           방지 해제
+        </Button>
+        <Button onClick={handleUltraClearCookies} style={{ backgroundColor: '#8e44ad' }}>
+          초강력 쿠키 삭제
+        </Button>
+        <Button onClick={handleClearCookiesViaIframe} style={{ backgroundColor: '#e67e22' }}>
+          iframe 쿠키 삭제
+        </Button>
+        <Button onClick={handleClearAllBrowserStorage} style={{ backgroundColor: '#27ae60' }}>
+          브라우저 스토리지 정리
+        </Button>
+        <Button onClick={handlePerformCompleteLogout} style={{ backgroundColor: '#c0392b' }}>
+          완전한 로그아웃
         </Button>
       </ButtonGroup>
 
