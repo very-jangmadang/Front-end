@@ -18,6 +18,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
+    // 로그아웃 후 강제 대기 시간 (3초)
+    const logoutTime = localStorage.getItem('logoutTime');
+    if (logoutTime) {
+      const timeSinceLogout = Date.now() - parseInt(logoutTime);
+      if (timeSinceLogout < 3000) {
+        console.log('로그아웃 후 대기 시간 중, 로그인 체크 건너뜀');
+        setIsAuthenticated(false);
+        return;
+      } else {
+        // 대기 시간이 지나면 로그아웃 시간 기록 삭제
+        localStorage.removeItem('logoutTime');
+      }
+    }
+
     try {
       console.log('로그인 상태 체크 시작');
       const { data } = await axiosInstance.get('/api/permit/user-info', {
@@ -96,42 +110,56 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     showCookieDebugInfo(); // 디버깅 안내
     
     setIsLoggingOut(true); // 로그아웃 시작
+    setIsAuthenticated(false); // 즉시 인증 상태를 false로 설정
     
-    // 1단계: 서버 로그아웃 요청
-    try {
-      console.log('1단계: 서버 로그아웃 요청 시작');
-      const response = await axiosInstance.post(
-        '/api/permit/logout',
-        {},
-        { 
-          withCredentials: true,
-        },
-      );
-      
-      console.log('서버 로그아웃 응답:', response);
-      
-      const responseData = response.data;
-      if (responseData && responseData.isSuccess) {
-        console.log('✅ 서버 로그아웃 성공:', responseData.message);
-      } else {
-        console.warn('⚠️ 로그아웃 응답 형식 이상:', responseData);
-      }
-      
-    } catch (error: any) {
-      console.error('❌ 서버 로그아웃 중 에러 발생:', error);
-      
-      if (error.response) {
-        console.error('서버 응답 에러:', {
-          status: error.response.status,
-          responseCode: error.response.data?.code,
-          message: error.response.data?.message,
-        });
-      } else {
-        console.error('네트워크 에러:', error);
+    // 로그아웃 시간 기록 (자동 로그인 방지용)
+    localStorage.setItem('logoutTime', Date.now().toString());
+    
+    // 1단계: 서버 로그아웃 요청 (여러 번 시도)
+    console.log('1단계: 서버 로그아웃 요청 시작');
+    
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        console.log(`서버 로그아웃 시도 ${attempt}/3`);
+        const response = await axiosInstance.post(
+          '/api/permit/logout',
+          {},
+          { 
+            withCredentials: true,
+          },
+        );
+        
+        console.log('서버 로그아웃 응답:', response);
+        
+        const responseData = response.data;
+        if (responseData && responseData.isSuccess) {
+          console.log('✅ 서버 로그아웃 성공:', responseData.message);
+          break; // 성공하면 루프 종료
+        } else {
+          console.warn('⚠️ 로그아웃 응답 형식 이상:', responseData);
+        }
+        
+      } catch (error: any) {
+        console.error(`❌ 서버 로그아웃 시도 ${attempt} 실패:`, error);
+        
+        if (error.response) {
+          console.error('서버 응답 에러:', {
+            status: error.response.status,
+            responseCode: error.response.data?.code,
+            message: error.response.data?.message,
+          });
+        } else {
+          console.error('네트워크 에러:', error);
+        }
+        
+        // 마지막 시도가 아니면 잠시 대기 후 재시도
+        if (attempt < 3) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
       }
     }
     
-    // 2단계: 다중 도메인 쿠키 정리
+    // 2단계: 다중 도메인 쿠키 정리 (강화)
     console.log('2단계: 다중 도메인 쿠키 정리 시작');
     
     const domainsToClear = [
@@ -139,74 +167,124 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       '.jangmadang.site',
       '.vercel.app',
       'localhost',
-      '.localhost'
+      '.localhost',
+      'www.jangmadang.site',
+      'www.vercel.app'
     ];
     
-    const cookiesToDelete = ['access', 'refresh', 'connect.sid', 'sessionId'];
+    const cookiesToDelete = [
+      'access', 
+      'refresh', 
+      'connect.sid', 
+      'sessionId',
+      'JSESSIONID',
+      'PHPSESSID',
+      'ASP.NET_SessionId'
+    ];
     
-    // 모든 도메인의 모든 쿠키 삭제
-    cookiesToDelete.forEach(cookieName => {
-      domainsToClear.forEach(domain => {
-        const deleteOptions = [
-          `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`,
-          `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${domain};`,
-          `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.${domain};`,
-          `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure;`,
-          `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax;`,
-          `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Strict;`,
-        ];
-        
-        deleteOptions.forEach(option => {
-          try {
-            document.cookie = option;
-          } catch (error) {
-            console.warn(`쿠키 삭제 실패 (${cookieName} on ${domain}):`, option, error);
-          }
+    // 모든 도메인의 모든 쿠키 삭제 (여러 번 시도)
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      console.log(`쿠키 삭제 시도 ${attempt}/3`);
+      
+      cookiesToDelete.forEach(cookieName => {
+        domainsToClear.forEach(domain => {
+          const deleteOptions = [
+            `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`,
+            `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${domain};`,
+            `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.${domain};`,
+            `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure;`,
+            `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax;`,
+            `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Strict;`,
+            `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; max-age=0;`,
+            `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; max-age=-1;`,
+          ];
+          
+          deleteOptions.forEach(option => {
+            try {
+              document.cookie = option;
+            } catch (error) {
+              console.warn(`쿠키 삭제 실패 (${cookieName} on ${domain}):`, option, error);
+            }
+          });
         });
       });
-    });
+      
+      // 잠시 대기 후 재시도
+      if (attempt < 3) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
     
-    // 3단계: 브라우저 스토리지 정리
+    // 3단계: 브라우저 스토리지 정리 (강화)
     console.log('3단계: 브라우저 스토리지 정리');
     
     try {
+      // localStorage 정리
       localStorage.clear();
+      
+      // sessionStorage 정리
       sessionStorage.clear();
+      
+      // IndexedDB 정리 (가능한 경우)
+      if ('indexedDB' in window) {
+        try {
+          const databases = await indexedDB.databases();
+          databases.forEach(db => {
+            if (db.name) {
+              indexedDB.deleteDatabase(db.name);
+            }
+          });
+        } catch (error) {
+          console.warn('IndexedDB 정리 실패:', error);
+        }
+      }
+      
       console.log('✅ 브라우저 스토리지 정리 완료');
     } catch (error) {
       console.warn('브라우저 스토리지 정리 실패:', error);
     }
     
-    // 4단계: 브라우저 캐시 정리
+    // 4단계: 브라우저 캐시 정리 (강화)
     console.log('4단계: 브라우저 캐시 정리');
     if ('caches' in window) {
       try {
-        caches.keys().then(names => {
-          names.forEach(name => {
-            caches.delete(name);
-          });
-        });
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map(name => caches.delete(name)));
         console.log('✅ 브라우저 캐시 정리 완료');
       } catch (error) {
         console.warn('브라우저 캐시 정리 실패:', error);
       }
     }
     
-    // 5단계: 최종 상태 확인
+    // 5단계: 서비스 워커 정리 (가능한 경우)
+    if ('serviceWorker' in navigator) {
+      try {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(registrations.map(registration => registration.unregister()));
+        console.log('✅ 서비스 워커 정리 완료');
+      } catch (error) {
+        console.warn('서비스 워커 정리 실패:', error);
+      }
+    }
+    
+    // 6단계: 최종 상태 확인
     console.log('5단계: 로그아웃 후 최종 쿠키 상태 확인');
     checkDomainAndCookies();
     
-    setIsAuthenticated(false);
-    console.log('✅ 인증 상태를 false로 설정');
+    console.log('✅ 인증 상태를 false로 설정 완료');
     
-    // 6단계: 완료 처리
+    // 7단계: 완료 처리 (강화된 대기 시간)
     setTimeout(() => {
       console.log('✅ 다중 도메인 로그아웃 완료 - 홈으로 이동');
       setIsLoggingOut(false);
       
+      // URL 파라미터 정리
+      const cleanUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, cleanUrl);
+      
       // 강제 새로고침으로 완전한 상태 초기화
       window.location.reload();
-    }, 2000); // 시간을 더 늘려서 모든 쿠키 삭제 완료 보장
+    }, 3000); // 시간을 더 늘려서 모든 정리 작업 완료 보장
   };
 
   // 리프레시 토큰 요청 함수

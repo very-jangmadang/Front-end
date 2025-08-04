@@ -16,7 +16,9 @@ import {
   attemptCrossDomainCookieFix,
   optimizeCookieSettings,
   solveMultiDomainLogoutIssue,
-  getBackendSessionRecommendations
+  getBackendSessionRecommendations,
+  preventAutoLoginAfterLogout,
+  clearLogoutPrevention
 } from '../../utils/cookieUtils';
 import axiosInstance from '../../apis/axiosInstance';
 
@@ -155,6 +157,18 @@ const CookieDebugPage: React.FC = () => {
     addDebugInfo('콘솔에서 백엔드 세션 설정 권장사항을 확인하세요.');
   };
 
+  const handlePreventAutoLogin = () => {
+    addDebugInfo('=== 로그아웃 후 자동 로그인 방지 설정 ===');
+    preventAutoLoginAfterLogout();
+    addDebugInfo('콘솔에서 자동 로그인 방지 설정 결과를 확인하세요.');
+  };
+
+  const handleClearLogoutPrevention = () => {
+    addDebugInfo('=== 로그아웃 후 자동 로그인 방지 해제 ===');
+    clearLogoutPrevention();
+    addDebugInfo('콘솔에서 자동 로그인 방지 해제 결과를 확인하세요.');
+  };
+
   return (
     <Container>
       <Title>쿠키 디버깅 페이지</Title>
@@ -210,6 +224,12 @@ const CookieDebugPage: React.FC = () => {
         </Button>
         <Button onClick={handleGetBackendRecommendations} style={{ backgroundColor: '#6c757d' }}>
           백엔드 권장사항
+        </Button>
+        <Button onClick={handlePreventAutoLogin} style={{ backgroundColor: '#ffc107' }}>
+          자동로그인 방지
+        </Button>
+        <Button onClick={handleClearLogoutPrevention} style={{ backgroundColor: '#17a2b8' }}>
+          방지 해제
         </Button>
       </ButtonGroup>
 

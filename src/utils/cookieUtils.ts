@@ -602,4 +602,42 @@ export const getBackendSessionRecommendations = (): void => {
   console.log('  }');
   console.log('}));');
   console.log('```');
+};
+
+/**
+ * 로그아웃 후 자동 로그인 방지 설정
+ */
+export const preventAutoLoginAfterLogout = (): void => {
+  console.log('=== 로그아웃 후 자동 로그인 방지 설정 ===');
+  
+  // 로그아웃 시간 기록
+  localStorage.setItem('logoutTime', Date.now().toString());
+  
+  // 로그아웃 플래그 설정
+  localStorage.setItem('isLoggingOut', 'true');
+  
+  // 세션 스토리지도 정리
+  sessionStorage.setItem('logoutTime', Date.now().toString());
+  sessionStorage.setItem('isLoggingOut', 'true');
+  
+  console.log('✅ 로그아웃 후 자동 로그인 방지 설정 완료');
+  console.log('💡 설정된 내용:');
+  console.log('- 로그아웃 시간 기록');
+  console.log('- 로그아웃 플래그 설정');
+  console.log('- 3초간 자동 로그인 체크 방지');
+};
+
+/**
+ * 로그아웃 후 자동 로그인 방지 해제
+ */
+export const clearLogoutPrevention = (): void => {
+  console.log('=== 로그아웃 후 자동 로그인 방지 해제 ===');
+  
+  // 로그아웃 관련 데이터 삭제
+  localStorage.removeItem('logoutTime');
+  localStorage.removeItem('isLoggingOut');
+  sessionStorage.removeItem('logoutTime');
+  sessionStorage.removeItem('isLoggingOut');
+  
+  console.log('✅ 로그아웃 후 자동 로그인 방지 해제 완료');
 }; 
