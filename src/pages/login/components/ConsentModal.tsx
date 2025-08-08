@@ -23,6 +23,9 @@ const ConsentModal: React.FC<ModalProps> = ({ onClose }) => {
   );
 
   useEffect(() => {
+    console.log('=== ConsentModal 열림 ===');
+    console.log('현재 체크 상태:', checked);
+    
     const handleResize = () => {
       setIsLargeScreen(window.innerWidth >= 745);
     };
@@ -32,7 +35,7 @@ const ConsentModal: React.FC<ModalProps> = ({ onClose }) => {
     return () => {
       window.removeEventListener('resize', handleResize);
     };
-  }, []);
+  }, [checked]);
 
   const handleChange1 = (event: React.ChangeEvent<HTMLInputElement>) => {
     setChecked([event.target.checked, event.target.checked]);
@@ -47,9 +50,14 @@ const ConsentModal: React.FC<ModalProps> = ({ onClose }) => {
   };
 
   const handleOpenNextModal = () => {
+    console.log('ConsentModal - 계속하기 버튼 클릭');
+    console.log('체크 상태:', checked);
+    
     if (checked[0] && checked[1]) {
+      console.log('모든 약관 동의 완료 - AgeModal 열기');
       openModal(({ onClose }) => <AgeModal onClose={onClose} />);
     } else {
+      console.log('약관 동의가 완료되지 않음');
       return;
     }
   };

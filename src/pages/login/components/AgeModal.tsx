@@ -23,6 +23,9 @@ const AgeModal: React.FC<ModalProps> = ({ onClose }) => {
   );
 
   useEffect(() => {
+    console.log('=== AgeModal 열림 ===');
+    console.log('현재 체크 상태:', checked);
+    
     const handleResize = () => {
       setIsLargeScreen(window.innerWidth >= 745);
     };
@@ -32,7 +35,7 @@ const AgeModal: React.FC<ModalProps> = ({ onClose }) => {
     return () => {
       window.removeEventListener('resize', handleResize);
     };
-  }, []);
+  }, [checked]);
 
   const handleChange1 = (event: React.ChangeEvent<HTMLInputElement>) => {
     setChecked([event.target.checked, false]);
@@ -47,11 +50,17 @@ const AgeModal: React.FC<ModalProps> = ({ onClose }) => {
   }, [checked]);
 
   const handleOpenNextModal = () => {
+    console.log('AgeModal - 계속하기 버튼 클릭');
+    console.log('체크 상태:', checked);
+    
     if (checked[0]) {
+      console.log('만 14세 이상 선택 - SignupModal 열기');
       openModal(({ onClose }) => <SignupModal onClose={onClose} />);
     } else if (checked[1]) {
+      console.log('만 14세 미만 선택 - UnderAgeModal 열기');
       openModal(({ onClose }) => <UnderAgeModal onClose={onClose} />);
     } else {
+      console.log('나이 선택이 완료되지 않음');
       return;
     }
   };
