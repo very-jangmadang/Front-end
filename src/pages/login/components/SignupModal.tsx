@@ -14,10 +14,24 @@ interface ModalProps {
 }
 
 const RequestSignUp = async (nickname: string) => {
-  const response = await axiosInstance.post('/api/permit/nickname', {
-    nickname,
-  });
-  return response.data;
+  console.log('회원가입 요청 시작:', { nickname, baseURL: axiosInstance.defaults.baseURL });
+  
+  try {
+    const response = await axiosInstance.post('/api/permit/nickname', {
+      nickname,
+    }, {
+      withCredentials: true,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    });
+    console.log('회원가입 응답:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('회원가입 요청 실패:', error);
+    throw error;
+  }
 };
 
 const SignupModal: React.FC<ModalProps> = ({ onClose }) => {
@@ -36,24 +50,36 @@ const SignupModal: React.FC<ModalProps> = ({ onClose }) => {
   }, [name]);
 
   const handleOpenNextModal = async () => {
+    console.log('=== 회원가입 프로세스 시작 ===');
+    console.log('입력된 닉네임:', name);
+    console.log('정규식 테스트 결과:', regex.test(name));
+    console.log('현재 axiosInstance baseURL:', axiosInstance.defaults.baseURL);
+    console.log('현재 쿠키:', document.cookie);
+    
     if (!regex.test(name)) {
       setIsError('닉네임은 2~10자의 한글 또는 영어만 사용 가능합니다.');
       return;
     }
 
+    console.log('회원가입 프로세스 시작:', { name, baseURL: axiosInstance.defaults.baseURL });
+
     try {
       const response = await RequestSignUp(name);
+      console.log('회원가입 성공 응답:', response);
 
       if (response.code === 'COMMON_200') {
         setIsError('');
+        console.log('회원가입 성공 - EnterModal 열기');
         openModal(({ onClose }) => <EnterModal onClose={onClose} />);
       } else if (response.code === 'USER_4008') {
         console.log('닉네임 중복');
         setIsError('중복된 닉네임입니다');
       } else {
-        setIsError('');
+        console.log('알 수 없는 응답 코드:', response.code);
+        setIsError('회원가입 중 오류가 발생했습니다.');
       }
     } catch (err) {
+      console.error('회원가입 처리 중 에러:', err);
       const error = err as AxiosError<{
         isSuccess: boolean;
         code: string;
@@ -61,6 +87,12 @@ const SignupModal: React.FC<ModalProps> = ({ onClose }) => {
       }>;
 
       if (error.response) {
+        console.error('서버 응답 에러:', {
+          status: error.response.status,
+          data: error.response.data,
+          headers: error.response.headers
+        });
+
         if (error.response.status === 400) {
           const errorCode = error.response.data?.code;
 
@@ -68,13 +100,23 @@ const SignupModal: React.FC<ModalProps> = ({ onClose }) => {
             console.log('닉네임 중복');
             setIsError('중복된 닉네임입니다');
           } else {
-            setIsError('');
+            setIsError(error.response.data?.message || '잘못된 요청입니다.');
           }
+        } else if (error.response.status === 401) {
+          setIsError('인증이 필요합니다.');
+        } else if (error.response.status === 403) {
+          setIsError('권한이 없습니다.');
+        } else if (error.response.status === 500) {
+          setIsError('서버 오류가 발생했습니다.');
         } else {
-          setIsError('');
+          setIsError(error.response.data?.message || '회원가입 중 오류가 발생했습니다.');
         }
+      } else if (error.request) {
+        console.error('네트워크 에러:', error.request);
+        setIsError('네트워크 연결을 확인해주세요.');
       } else {
-        setIsError('');
+        console.error('기타 에러:', error.message);
+        setIsError('회원가입 중 오류가 발생했습니다.');
       }
     }
   };
