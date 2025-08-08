@@ -10,6 +10,7 @@ import media from '../../styles/media';
 import { useNavigate } from 'react-router-dom';
 import { useModalContext } from '../../components/Modal/context/ModalContext';
 import ChargeOkModal from './components/modal/ChargeOkModal';
+import WepinInitializer from '../../components/Wepin/WepinInitializer';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -66,6 +67,7 @@ function ChargePage() {
 
   return (
     <Container>
+      <WepinInitializer />
       {isLargeScreen && (
         <>
           <TitleBox>

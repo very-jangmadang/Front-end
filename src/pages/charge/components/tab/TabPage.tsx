@@ -90,7 +90,7 @@ function TabPage({ type }: TabTypeProps) {
     if (isLargeScreen) {
       console.log('충전 모달 열기');
       openModal(({ onClose }) => (
-        <ChargeModal amount={Number(ticket) * 100} onClose={onClose} />
+        <ChargeModal amount={Number(ticket)} onClose={onClose} />
       ));
     } else {
       if (checked === true) {

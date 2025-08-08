@@ -13,6 +13,7 @@ import { Link } from 'react-router-dom';
 import RaffleProps from '../../types/RaffleProps';
 import { useAuth } from '../../context/AuthContext';
 import axiosInstance from '../../apis/axiosInstance';
+import { getCookie } from '../../utils/cookieUtils';
 
 interface HomeData {
   approaching: RaffleProps[];

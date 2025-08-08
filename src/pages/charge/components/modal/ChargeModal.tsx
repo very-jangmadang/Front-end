@@ -1,13 +1,7 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import Modal from '../../../../components/Modal/Modal';
-import Checkbox from '@mui/material/Checkbox';
-import { Icon } from '@iconify/react';
-import CircleChecked from '@mui/icons-material/CheckCircleOutline';
-import CircleUnchecked from '@mui/icons-material/RadioButtonUnchecked';
-import { PostCharge } from '../../apis/chargeAPI';
-import { useMutation } from '@tanstack/react-query';
-import Cookies from 'js-cookie';
+import { useWepin } from '../../../../context/WepinContext';
 
 interface ModalProps {
   onClose: () => void;
@@ -16,117 +10,44 @@ interface ModalProps {
 
 const ChargeModal: React.FC<ModalProps> = ({ onClose, amount }) => {
   const [checked, setChecked] = useState(false);
+  const { wepin } = useWepin(); // Wepin Context에서 wepin 객체 가져오기
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setChecked(event.target.checked);
   };
 
-  const { mutate: postMutation } = useMutation({
-    mutationFn: PostCharge,
-    onSuccess: (data) => {
-      if (!data?.redirectUrl) {
-        console.error('redirectUrl이 존재하지 않습니다.');
-        return;
-      }
+  const handleNextModal = async () => {
+    if (!checked) {
+      alert('[필수] 전체동의에 체크해주세요.');
+      return;
+    }
 
-      console.log('원본 redirectUrl:', data.redirectUrl);
+    // Wepin 지갑이 연결되었는지 확인
+    if (!wepin) {
+      alert('Wepin 지갑이 초기화되지 않았습니다. 먼저 로그인해주세요.');
+      return;
+    }
 
-      try {
-        let fullRedirectUrl = data.redirectUrl;
+    // ChargeButton의 로직을 여기에 적용합니다.
+    // 실제 서비스에서는 Wepin SDK의 결제/송금 함수를 호출해야 합니다.
+    // 아래는 getAccounts()를 사용한 연결 확인 예시입니다.
+    try {
+      console.log('Wepin 지갑 정보를 조회합니다.');
+      const accounts = await wepin.getAccounts();
+      console.log('Wepin 계정 정보:', accounts);
+      alert(`Wepin 지갑 연결 확인!\n${JSON.stringify(accounts, null, 2)}`);
 
-        // 만약 상대경로라면 절대경로로 변환
-        if (!fullRedirectUrl.startsWith('http')) {
-          fullRedirectUrl = `${window.location.origin}${fullRedirectUrl}`;
-        }
-
-        console.log('변환된 URL:', fullRedirectUrl);
-
-        const urlParams = new URLSearchParams(new URL(fullRedirectUrl).search);
-        const actualUrl = urlParams.get('url');
-
-        let tid = urlParams.get('tid'); // tid 추출
-
-        if (!tid) {
-          console.warn('TID가 없어서 "tid"라는 기본 값을 사용합니다.');
-          tid = 'tid'; // tid가 없을 경우 기본값 설정
-        }
-
-        console.log('now tid:', tid); // tid 로그 출력
-
-        // 쿠키를 '/api/payment/approve' 경로에 설정
-        Cookies.set('tid', tid, {
-          expires: 1,
-          path: '/', // 전체 경로에서 쿠키 유효
-          domain: window.location.hostname, // 현재 도메인에 맞게 동적 설정
-          secure: true, // HTTPS에서만 쿠키 유효
-          sameSite: 'Lax', // SameSite 설정 변경 (보안을 위해 Lax로 설정)
-        });
-
-        console.log('쿠키 설정:', document.cookie); // 쿠키가 제대로 설정되었는지 확인
-
-        if (actualUrl && actualUrl.startsWith('https://')) {
-          console.log('Redirecting to:', actualUrl);
-          window.location.href = actualUrl;
-        } else {
-          console.error('URL parameter "url" not found or invalid.');
-        }
-      } catch (error) {
-        console.error('Error processing redirect URL:', error);
-      }
-    },
-    onError: (error) => {
-      console.log('충전 요청 실패 : ', error);
-    },
-  });
-
-  const handleNextModal = () => {
-    if (checked) {
-      postMutation({
-        itemId: '티켓',
-        itemName: '테스트상품',
-        totalAmount: amount,
-      });
+      // Wepin 지갑 확인 후, 실제 충전 로직(예: Wepin 결제 위젯 호출)을 여기에 추가합니다.
+      // 예: wepin.wallet.sendTransaction(...) 또는 wepin.openWidget(...)
+    } catch (error) {
+      console.error('Wepin 계정 정보 조회에 실패했습니다:', error);
+      alert('계정 정보 조회 중 오류가 발생했습니다.');
     }
   };
 
   return (
     <Modal onClose={onClose}>
       <Container>
-        <Box>
-          <Checkbox
-            style={{
-              transform: 'translateY(0px)',
-            }}
-            sx={{
-              '& .MuiSvgIcon-root': { fontSize: 25 },
-              '&.Mui-checked': {
-                color: '#C908FF',
-              },
-            }}
-            checked={checked}
-            onChange={(event) => {
-              event.stopPropagation();
-              handleChange(event);
-            }}
-            icon={<CircleUnchecked />}
-            checkedIcon={<CircleChecked />}
-          />
-          <Consent>
-            <span style={{ color: '#C908FF' }}>[필수]</span> 전체동의
-          </Consent>
-        </Box>
-        <CheckBox>
-          <Short>상품, 가격, 결제 전 주의사항 확인</Short>
-          <Icon
-            icon="weui:arrow-outlined"
-            style={{
-              width: '23px',
-              height: '25px',
-              cursor: 'pointer',
-              color: '#8F8E94',
-            }}
-          />
-        </CheckBox>
         <Button onClick={handleNextModal}>충전하기</Button>
       </Container>
     </Modal>
@@ -191,4 +112,3 @@ const Container = styled.div`
 `;
 
 export default ChargeModal;
-
