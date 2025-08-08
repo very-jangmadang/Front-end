@@ -1,8 +1,7 @@
 import axios from 'axios';
 
 // 환경 변수가 없을 때 기본값 설정
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || 'https://api.beta.jangmadang.site';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.beta.jangmadang.site';
 
 // 환경 변수 디버깅
 console.log('API 설정 정보:', {
@@ -13,18 +12,18 @@ console.log('API 설정 정보:', {
   currentOrigin: window.location.origin,
   userAgent: navigator.userAgent,
   cookies: document.cookie,
-  isSecure: window.location.protocol === 'https:',
+  isSecure: window.location.protocol === 'https:'
 });
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
-    Accept: 'application/json',
+    'Accept': 'application/json',
     // Authorization 헤더는 토큰이 있을 때만 설정
     ...(import.meta.env.VITE_API_ACCESS_TOKEN && {
-      Authorization: `Bearer ${import.meta.env.VITE_API_ACCESS_TOKEN}`,
-    }),
+      Authorization: `Bearer ${import.meta.env.VITE_API_ACCESS_TOKEN}`
+    })
   },
   withCredentials: true,
   // 크로스도메인 요청을 위한 추가 설정
@@ -50,14 +49,14 @@ axiosInstance.interceptors.request.use(
       withCredentials: config.withCredentials,
       headers: config.headers,
       data: config.data,
-      cookies: document.cookie,
+      cookies: document.cookie
     });
     return config;
   },
   (error) => {
     console.error('API 요청 에러:', error);
     return Promise.reject(error);
-  },
+  }
 );
 
 // 응답 인터셉터 추가
@@ -68,7 +67,7 @@ axiosInstance.interceptors.response.use(
       url: response.config.url,
       data: response.data,
       responseHeaders: response.headers,
-      cookiesAfterResponse: document.cookie,
+      cookiesAfterResponse: document.cookie
     });
     return response;
   },
@@ -79,19 +78,13 @@ axiosInstance.interceptors.response.use(
       data: error.response?.data,
       message: error.message,
       // CORS 에러인지 확인
-      isCorsError:
-        error.message.includes('Network Error') ||
-        error.message.includes('CORS'),
+      isCorsError: error.message.includes('Network Error') || error.message.includes('CORS'),
       // 쿠키 관련 에러인지 확인
-      isCookieError:
-        error.response?.status === 401 || error.response?.status === 403,
+      isCookieError: error.response?.status === 401 || error.response?.status === 403
     });
 
     // CORS 에러인 경우 특별한 처리
-    if (
-      error.message.includes('Network Error') ||
-      error.message.includes('CORS')
-    ) {
+    if (error.message.includes('Network Error') || error.message.includes('CORS')) {
       console.error('🚨 CORS 에러 발생! 백엔드 CORS 설정을 확인하세요.');
       console.error('백엔드에서 다음 설정이 필요합니다:');
       console.error('- allowedOrigins에 현재 도메인 추가');
@@ -100,7 +93,7 @@ axiosInstance.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  },
+  }
 );
 
 export default axiosInstance;
