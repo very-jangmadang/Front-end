@@ -39,6 +39,23 @@ const ResponsiveHeader = () => {
   const { isAuthenticated, logout } = useAuth();
   const isSearchCompleted = useIsSearchCompleted((v) => v.isSearchCompleted);
   const [searchClicked, setSearchClicked] = useState<boolean>(false);
+  const [isBusinessUser, setIsBusinessUser] = useState<boolean>(false);
+
+  // 사용자의 비즈니스 상태 확인
+  const checkBusinessStatus = async () => {
+    if (!isAuthenticated) return;
+    
+    try {
+      const response = await axiosInstance.get('/api/member/mypage');
+      if (response.data.isSuccess && response.data.result) {
+        // API 응답에 is_business 필드가 있다고 가정
+        setIsBusinessUser(response.data.result.is_business || false);
+      }
+    } catch (error) {
+      console.error('비즈니스 상태 확인 실패:', error);
+      setIsBusinessUser(false);
+    }
+  };
 
   const getSearch = async () => {
     const { data }: { data: TSearch } = await axiosInstance.get(
@@ -123,6 +140,14 @@ const ResponsiveHeader = () => {
       document.removeEventListener('mousedown', handleCategoryOut);
     };
   }, [searchRef.current, categoryRef.current]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      checkBusinessStatus();
+    } else {
+      setIsBusinessUser(false);
+    }
+  }, [isAuthenticated]);
 
   return (
     <>
@@ -281,18 +306,21 @@ const ResponsiveHeader = () => {
               <IconTextDiv fontSize={'10px'}>충전/환전</IconTextDiv>
             </IconDiv>
 
-            <IconDiv
-              onClick={() => {
-                if (isAuthenticated) {
-                  navigate('/raffle-upload'); // 래플 업로드
-                } else {
-                  handleOpenModal();
-                }
-              }}
-            >
-              <img src={icUpload} width={22} />
-              <IconTextDiv fontSize={'10px'}>래플 업로드</IconTextDiv>
-            </IconDiv>
+            {/* 비즈니스 계정일 때만 래플 업로드 버튼 표시 */}
+            {isBusinessUser && (
+              <IconDiv
+                onClick={() => {
+                  if (isAuthenticated) {
+                    navigate('/raffle-upload'); // 래플 업로드
+                  } else {
+                    handleOpenModal();
+                  }
+                }}
+              >
+                <img src={icUpload} width={22} />
+                <IconTextDiv fontSize={'10px'}>래플 업로드</IconTextDiv>
+              </IconDiv>
+            )}
           </LogoRightContainer>
         </SearchBoxContainer>
       </Wrapper>
