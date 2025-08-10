@@ -334,12 +334,12 @@ export default ResponsiveHeader;
 const Wrapper = styled.div`
   display: flex;
   flex-direction: column;
-  width: 1084px;
+  width: 1200px;
   height: 188px;
   box-sizing: border-box;
   z-index: 100;
   ${media.medium`
-        width: 650px;
+        width: 750px;
         // padding: 0 40px;
   `}
   ${media.small`
@@ -457,10 +457,10 @@ const CategoryContainer = styled.div`
 
 const SearchBoxDiv = styled.div`
   position: relative;
-  width: 590px;
+  width: 700px;
   // flex: 1;
-  // max-width: 590px;
-  // min-width: 560px;
+  // max-width: 700px;
+  // min-width: 700px;
   height: 42px;
   border-radius: 51px;
   border: 1.5px solid #c908ff;
@@ -468,7 +468,10 @@ const SearchBoxDiv = styled.div`
   padding: 3px 20px;
   display: flex;
   ${media.medium`
-    width: auto;
+    width: 600px;
+  `}
+  ${media.small`
+    width: 358px;
   `}
 `;
 
