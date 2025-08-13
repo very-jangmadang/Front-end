@@ -11,14 +11,16 @@ import { AxiosError } from 'axios';
 
 interface ModalProps {
   onClose: () => void;
+  isBusiness?: boolean;
 }
 
-const RequestSignUp = async (nickname: string) => {
-  console.log('회원가입 요청 시작:', { nickname, baseURL: axiosInstance.defaults.baseURL });
+const RequestSignUp = async (nickname: string, isBusiness: boolean) => {
+  console.log('회원가입 요청 시작:', { nickname, isBusiness, baseURL: axiosInstance.defaults.baseURL });
   
   try {
     const response = await axiosInstance.post('/api/permit/nickname', {
       nickname,
+      isBusiness,
     }, {
       withCredentials: true,
       headers: {
@@ -34,7 +36,7 @@ const RequestSignUp = async (nickname: string) => {
   }
 };
 
-const SignupModal: React.FC<ModalProps> = ({ onClose }) => {
+const SignupModal: React.FC<ModalProps> = ({ onClose, isBusiness = false }) => {
   const { openModal } = useModalContext();
   const [isError, setIsError] = useState('');
   const [name, setName] = useState('');
@@ -64,7 +66,7 @@ const SignupModal: React.FC<ModalProps> = ({ onClose }) => {
     console.log('회원가입 프로세스 시작:', { name, baseURL: axiosInstance.defaults.baseURL });
 
     try {
-      const response = await RequestSignUp(name);
+      const response = await RequestSignUp(name, isBusiness);
       console.log('회원가입 성공 응답:', response);
 
       if (response.code === 'COMMON_200') {

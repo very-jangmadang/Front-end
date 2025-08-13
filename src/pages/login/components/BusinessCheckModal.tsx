@@ -3,11 +3,11 @@ import styled from 'styled-components';
 import Checkbox from '@mui/material/Checkbox';
 import CircleChecked from '@mui/icons-material/CheckCircleOutline';
 import CircleUnchecked from '@mui/icons-material/RadioButtonUnchecked';
-import BusinessCheckModal from './BusinessCheckModal';
+import BusinessNumberModal from './BusinessNumberModal';
+import SignupModal from './SignupModal';
 import Modal from '../../../components/Modal/Modal';
 import { useModalContext } from '../../../components/Modal/context/ModalContext';
 import media from '../../../styles/media';
-import UnderAgeModal from './UnderAgeModal';
 import logo from '../../../assets/logo.png';
 import { Icon } from '@iconify/react';
 
@@ -15,7 +15,7 @@ interface ModalProps {
   onClose: () => void;
 }
 
-const AgeModal: React.FC<ModalProps> = ({ onClose }) => {
+const BusinessCheckModal: React.FC<ModalProps> = ({ onClose }) => {
   const [checked, setChecked] = React.useState([false, false]);
   const { openModal } = useModalContext();
   const [isLargeScreen, setIsLargeScreen] = useState<boolean>(() =>
@@ -23,7 +23,7 @@ const AgeModal: React.FC<ModalProps> = ({ onClose }) => {
   );
 
   useEffect(() => {
-    console.log('=== AgeModal 열림 ===');
+    console.log('=== BusinessCheckModal 열림 ===');
     console.log('현재 체크 상태:', checked);
     
     const handleResize = () => {
@@ -50,17 +50,17 @@ const AgeModal: React.FC<ModalProps> = ({ onClose }) => {
   }, [checked]);
 
   const handleOpenNextModal = () => {
-    console.log('AgeModal - 계속하기 버튼 클릭');
+    console.log('BusinessCheckModal - 계속하기 버튼 클릭');
     console.log('체크 상태:', checked);
     
     if (checked[0]) {
-      console.log('만 14세 이상 선택 - BusinessCheckModal 열기');
-      openModal(({ onClose }) => <BusinessCheckModal onClose={onClose} />);
+      console.log('사업자 계정 선택 - BusinessNumberModal 열기');
+      openModal(({ onClose }) => <BusinessNumberModal onClose={onClose} />);
     } else if (checked[1]) {
-      console.log('만 14세 미만 선택 - UnderAgeModal 열기');
-      openModal(({ onClose }) => <UnderAgeModal onClose={onClose} />);
+      console.log('일반 계정 선택 - SignupModal 열기');
+      openModal(({ onClose }) => <SignupModal onClose={onClose} isBusiness={false} />);
     } else {
-      console.log('나이 선택이 완료되지 않음');
+      console.log('계정 타입 선택이 완료되지 않음');
       return;
     }
   };
@@ -88,7 +88,7 @@ const AgeModal: React.FC<ModalProps> = ({ onClose }) => {
       <Container>
         <NewOption>
           <Circle />
-          <Title>최소 연령 확인</Title>
+          <Title>사업자 확인</Title>
         </NewOption>
         <Line />
         <Option style={{ marginBottom: '26px' }}>
@@ -104,7 +104,7 @@ const AgeModal: React.FC<ModalProps> = ({ onClose }) => {
               },
             }}
           />
-          <Short>만 14세 이상입니다.</Short>
+          <Short>사업자 계정으로 가입을 원합니다.</Short>
         </Option>
         <Option>
           <Checkbox
@@ -121,7 +121,7 @@ const AgeModal: React.FC<ModalProps> = ({ onClose }) => {
               },
             }}
           />
-          <Short>만 14세 미만입니다.</Short>
+          <Short>일반 계정으로 가입을 원합니다.</Short>
         </Option>
         <Button onClick={handleOpenNextModal}>계속하기</Button>
       </Container>
@@ -267,4 +267,4 @@ const Title = styled.div`
     `}
 `;
 
-export default AgeModal;
+export default BusinessCheckModal; 

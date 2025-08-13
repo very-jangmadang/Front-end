@@ -3,6 +3,7 @@ import media from '../styles/media';
 import icLogo from '../assets/header/icon-logo.svg';
 import icHamburger from '../assets/header/icon-hamburger.svg';
 import ticket from '../assets/ticketLogo.png';
+import wepinLogo from '../assets/header/wepin-logo.svg';
 import { ReactComponent as IcNotice } from '../assets/header/icon-notice.svg';
 import { ReactComponent as IcSetting } from '../assets/header/icon-setting.svg';
 // import icSetting from '../assets/header/icon-setting.svg';
@@ -153,27 +154,12 @@ const ResponsiveHeader = () => {
     <>
       <Wrapper>
         <TopContainer>
+          <WepinLogoLink href="https://www.wepin.io/ko" target="_blank" rel="noopener noreferrer">
+            <WepinLogo src={wepinLogo} alt="Wepin" />
+          </WepinLogoLink>
           <LoginBtn onClick={onClickLoginBtn} state={String(isAuthenticated)}>
             {isAuthenticated ? '로그아웃' : '로그인'}
           </LoginBtn>
-          <LineDiv height={'27px'} margin={'0 32px'} className="line-1" />
-          <NoticeIconDiv
-            onClick={() => {
-              if (isAuthenticated) {
-                navigate('/notification'); // 알림 페이지
-              } else {
-                handleOpenModal();
-              }
-            }}
-          >
-            <IcNotice
-              className="svg"
-              width={18.65}
-              height={21.32}
-              fill={'#8F8E94'}
-            />
-            <IconTextDiv fontSize={'14px'}>알림</IconTextDiv>
-          </NoticeIconDiv>
           <LineDiv height={'27px'} margin={'0 32px'} />
           <SettingIconDiv
             onClick={() => {
@@ -334,12 +320,12 @@ export default ResponsiveHeader;
 const Wrapper = styled.div`
   display: flex;
   flex-direction: column;
-  width: 1200px;
+  width: 1084px;
   height: 188px;
   box-sizing: border-box;
   z-index: 100;
   ${media.medium`
-        width: 750px;
+        width: 650px;
         // padding: 0 40px;
   `}
   ${media.small`
@@ -416,6 +402,7 @@ const IconTextDiv = styled.div<{
 
 const SearchBoxContainer = styled.div`
   display: flex;
+  justify-content: center;
   // justify-content: space-between;
   // justify-content: center;
   align-items: center;
@@ -457,10 +444,10 @@ const CategoryContainer = styled.div`
 
 const SearchBoxDiv = styled.div`
   position: relative;
-  width: 700px;
+  width: 590px;
   // flex: 1;
-  // max-width: 700px;
-  // min-width: 700px;
+  // max-width: 590px;
+  // min-width: 560px;
   height: 42px;
   border-radius: 51px;
   border: 1.5px solid #c908ff;
@@ -468,10 +455,7 @@ const SearchBoxDiv = styled.div`
   padding: 3px 20px;
   display: flex;
   ${media.medium`
-    width: 600px;
-  `}
-  ${media.small`
-    width: 358px;
+    width: auto;
   `}
 `;
 
@@ -724,5 +708,24 @@ const Line = styled.div`
   background: #e4e4e4;
   ${media.small`
     margin-top: 20px;
+  `}
+`;
+
+const WepinLogoLink = styled.a`
+  text-decoration: none;
+  margin-right: 20px;
+  margin-top: 5px;
+  ${media.small`
+    margin-right: 10px;
+  `}
+`;
+
+const WepinLogo = styled.img`
+  width: 100px;
+  height: 30px;
+  object-fit: contain;
+  ${media.small`
+    width: 80px;
+    height: 24px;
   `}
 `;

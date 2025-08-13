@@ -11,25 +11,27 @@ interface ProfileProps {
   username: string;
   followers: number;
   reviews: number;
-  isUserProfilePage?: boolean;
+  isUserProfilePage?: boolean; // true: 남의 페이지, false: 마이페이지
   followStatus?: boolean;
   onEditProfile?: () => void;
   profileImageUrl?: string | null;
+  isBusinessUser?: boolean; // 사업자 계정 여부
 }
 
 const ProfileComponent: React.FC<ProfileProps> = ({
   username: initialUsername,
   followers: initialFollowers,
   reviews,
-  isUserProfilePage = false,
+  isUserProfilePage = false, // true: 남의 페이지, false: 마이페이지
   followStatus,
+  isBusinessUser = false, // 사업자 계정 여부
 }) => {
   const navigate = useNavigate();
   const { userId } = useParams<{ userId: string }>();
   const [profileImage, setProfileImage] = useState<string>(profileDefault);
   const [isFollowing, setIsFollowing] = useState<boolean>(followStatus ?? false);
   const [followers, setFollowers] = useState<number>(initialFollowers);
-  const [username, setUsername] = useState<string>(initialUsername); // ✅ 닉네임 상태 추가
+  const [username, setUsername] = useState<string>(initialUsername);
   const [isNameEditModalOpen, setIsNameEditModalOpen] = useState<boolean>(false);
 
   const handleCloseModal = () => {
@@ -56,8 +58,8 @@ const ProfileComponent: React.FC<ProfileProps> = ({
   
       if (response.data) {
         alert("프로필 이미지가 변경되었습니다!");
-        setProfileImage(response.data); // ✅ 이미지 URL을 즉시 업데이트
-        await fetchProfileData(); // ✅ 프로필 데이터 다시 불러와서 최신화
+        setProfileImage(response.data);
+        await fetchProfileData();
       } else {
         console.error("프로필 이미지 변경 실패:", response);
       }
@@ -65,6 +67,7 @@ const ProfileComponent: React.FC<ProfileProps> = ({
       console.error("프로필 이미지 변경 중 오류 발생:", error);
     }
   };
+
   const handleFollowToggle = async () => {
     try {
       let endpoint = "/api/member/follow/";
@@ -110,7 +113,7 @@ const ProfileComponent: React.FC<ProfileProps> = ({
         setProfileImage(profileImageUrl && profileImageUrl.startsWith("http") ? profileImageUrl : profileDefault);
         setIsFollowing(followStatus ?? false);
         setFollowers(followerNum);
-        setUsername(nickname); // ✅ 서버에서 닉네임 업데이트
+        setUsername(nickname);
       } else {
         console.warn("프로필 데이터 로드 실패:", response.data.message);
       }
@@ -127,7 +130,20 @@ const ProfileComponent: React.FC<ProfileProps> = ({
     <ProfileWrapper>
       <ProfileContent>
         <ProfileImageWrapper>
-          <ProfileImage src={profileImage} alt="Profile" />
+          <ProfileImage 
+            src={profileImage} 
+            alt="Profile" 
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.style.display = 'none';
+              target.nextElementSibling?.classList.remove('hidden');
+            }}
+          />
+          {/* 로딩 실패 시 표시할 회색 배경 */}
+          <ProfileImageFallback 
+            className={profileImage !== profileDefault ? 'hidden' : ''}
+          />
+          {/* 마이페이지일 때만 프로필 이미지 편집 가능 */}
           {!isUserProfilePage && (
             <>
               <EditIcon htmlFor="profile-upload">
@@ -145,8 +161,12 @@ const ProfileComponent: React.FC<ProfileProps> = ({
 
         <UserDetails>
           <UserInfo>
-            <RankIcon src={platinum3} alt="Platinum Rank" />
             <Username>{username}</Username>
+            {/* 사업자 계정일 때만 로고 표시 */}
+            {isBusinessUser && (
+              <RankIcon src={platinum3} alt="Platinum Rank" />
+            )}
+            {/* 마이페이지일 때만 닉네임 변경 버튼 표시 */}
             {!isUserProfilePage && (
               <NicknameEditButton onClick={() => setIsNameEditModalOpen(true)}>
                 닉네임 변경
@@ -155,42 +175,50 @@ const ProfileComponent: React.FC<ProfileProps> = ({
           </UserInfo>
 
           <StatsContainer>
-            <StatItem>
-              팔로워 <StatNumber>{followers <= -1 ? "비공개" : followers}</StatNumber>
-            </StatItem>
-            <Divider />
-            <StatItem>후기 <StatNumber>{reviews}</StatNumber></StatItem>
-          </StatsContainer>
-
-          <ButtonContainer>
-            {isUserProfilePage ? (
+            {/* 일반 계정: 팔로워 수 + 팔로잉 목록 버튼 */}
+            {!isBusinessUser && (
               <>
-                <FollowButton isFollowing={isFollowing} onClick={handleFollowToggle}>
-                  {isFollowing ? "팔로우 취소" : "팔로우"}
-                </FollowButton>
-                <StyledReportButton onClick={() => alert("신고하기 기능 준비 중입니다.")}>
-                  신고하기
-                </StyledReportButton>
-              </>
-            ) : (
-              <>
+                <StatItem>
+                  팔로워 <StatNumber>{followers <= -1 ? "비공개" : followers}</StatNumber>
+                </StatItem>
                 <StyledButton onClick={() => navigate("/mypage/following-list")}>
                   팔로잉 목록
                 </StyledButton>
-                <StyledButton onClick={() => navigate("/mypage/my-review")}>
-                  상점 후기
-                </StyledButton>
               </>
+            )}
+            
+            {/* 사업자 계정: 팔로워 + 후기 표시 */}
+            {isBusinessUser && (
+              <>
+                <StatItem>
+                  팔로워 <StatNumber>{followers <= -1 ? "비공개" : followers}</StatNumber>
+                </StatItem>
+                <Divider />
+                <StatItem>후기 <StatNumber>{reviews}</StatNumber></StatItem>
+              </>
+            )}
+          </StatsContainer>
+
+          <ButtonContainer>
+            {/* 남의 페이지일 때: 팔로우하기 버튼 */}
+            {isUserProfilePage ? (
+              <FollowButton isFollowing={isFollowing} onClick={handleFollowToggle}>
+                {isFollowing ? "팔로우 취소" : "팔로우하기"}
+              </FollowButton>
+            ) : (
+              /* 마이페이지일 때: 버튼 없음 (StatsContainer에 팔로잉 목록 버튼이 있음) */
+              null
             )}
           </ButtonContainer>
         </UserDetails>
       </ProfileContent>
 
-      {isNameEditModalOpen && (
+      {/* 마이페이지일 때만 닉네임 변경 모달 표시 */}
+      {!isUserProfilePage && isNameEditModalOpen && (
         <NameEditModal
-          currentNickname={username} // ✅ 현재 닉네임 전달
-          onClose={handleCloseModal} // ✅ 닫기 이벤트 연결
-          onNicknameChange={handleNicknameChange} // ✅ 닉네임 변경 핸들러 전달
+          currentNickname={username}
+          onClose={handleCloseModal}
+          onNicknameChange={handleNicknameChange}
         />
       )}
     </ProfileWrapper>
@@ -202,16 +230,17 @@ export default ProfileComponent;
 
 const StatsContainer = styled.div`
   display: flex;
-  width: 238px;
-  justify-content: space-between;
+  width: 100%;
+  justify-content: flex-start; /* 왼쪽 정렬로 변경 */
   align-items: center;
+  gap: 46px; /* 정확히 46px 간격 */
+  margin-top: 12px; /* UserInfo와의 간격 */
 
   @media (max-width: 744px) { /* 모바일 가로, 태블릿 세로 */
     width: 100%;
-    justify-content: center;
-    gap: 16px;
+    justify-content: flex-start; /* 모바일에서도 왼쪽 정렬 */
+    gap: 46px; /* 모바일에서도 동일한 간격 유지 */
   }
-
 `;
 
 const ProfileWrapper = styled.div`
@@ -237,11 +266,11 @@ const ProfileContent = styled.div`
   align-items: center;
   justify-content: center;
   width: 555px;
-  gap: 20px; /* ✅ 기본 가로 정렬일 때 간격 20px 유지 */
+  gap: 74px; /* 프로필 사진과 프로필 정보 간격 74px */
 
   @media (max-width: 768px) { /* 스마트폰 가로 & 태블릿 세로 */
     flex-direction: column;
-    gap: 45px; /* ✅ 세로 정렬 시 프로필 & 줄 간격 45px 유지 */
+    gap: 45px; /* 세로 정렬 시 프로필 & 줄 간격 45px 유지 */
   }
 `;
 
@@ -252,7 +281,8 @@ const ButtonContainer = styled.div`
   gap: 20px; /* ✅ 버튼 간격 항상 20px 유지 */
   width: 100%;
   max-width: 300px; /* ✅ 최대 너비 설정 */
-  flex-wrap: nowrap; /* ✅ 버튼이 줄 바뀌지 않도록 설정 */
+  flex-wrap: nowrap; /* ✅ 버튼이 줄 바꿈되지 않도록 설정 */
+  min-height: 38.5px; /* 최소 높이 설정 */
 
   @media (max-width: 1024px) { /* 태블릿 가로 & 소형 노트북 */
     max-width: 280px;
@@ -369,10 +399,12 @@ const NicknameEditButton = styled.button`
 const UserInfo = styled.div`
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 41px; /* 닉네임과 닉네임 변경 버튼 간격 41px */
+  width: auto; /* 자동 너비로 변경하여 꽉 들어가도록 */
+  justify-content: flex-start; /* 왼쪽 정렬 */
 
   @media (max-width: 390px) {
-    gap: 8px;
+    gap: 20px; /* 작은 화면에서는 간격 줄임 */
   }
 `;
 
@@ -432,6 +464,25 @@ const ProfileImage = styled.img`
   object-fit: cover;
 `;
 
+const ProfileImageFallback = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background-color: #e0e0e0; /* 회색 배경 */
+  display: none; /* 기본적으로 숨김 */
+
+  &.hidden {
+    display: none;
+  }
+
+  &:not(.hidden) {
+    display: block;
+  }
+`;
+
 const HiddenFileInput = styled.input`
   display: none;
 `;
@@ -463,9 +514,10 @@ const EditIcon = styled.label`
 const UserDetails = styled.div`
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start; /* 왼쪽 정렬로 변경 */
   gap: 12px;
-  text-align: center;
+  text-align: left; /* 텍스트 왼쪽 정렬 */
+  width: auto; /* 자동 너비로 변경하여 꽉 들어가도록 */
 
   @media (max-width: 390px) {
     gap: 8px;
@@ -516,6 +568,7 @@ export {
   ProfileContent,
   ProfileImageWrapper,
   ProfileImage,
+  ProfileImageFallback,
   HiddenFileInput,
   EditIcon,
   UserDetails,
