@@ -13,6 +13,7 @@ interface ProfileData {
   followerNum: number;
   reviewNum: number;
   raffles: any[];
+  is_business?: boolean;
 }
 
 const MyProfilePage: React.FC = () => {
@@ -20,24 +21,74 @@ const MyProfilePage: React.FC = () => {
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [isNameEditModalOpen, setIsNameEditModalOpen] = useState(false);
+  const [isBusinessUser, setIsBusinessUser] = useState<boolean>(false);
   const navigate = useNavigate();
 
   const fetchProfileData = async () => {
     setLoading(true);
     try {
-      const endpoint =
-        selectedToggle === '응모한 래플'
-          ? '/api/member/mypage'
-          : '/api/member/mypage/myRaffles';
+      let endpoint = '/api/member/mypage';
+      
+      if (selectedToggle === '응모한 래플') {
+        endpoint = '/api/member/mypage';
+      } else if (selectedToggle === '주최하는 래플') {
+        endpoint = '/api/member/mypage/myRaffles';
+      } else if (selectedToggle === '찜한 래플') {
+        endpoint = '/api/member/raffles/like'; // 찜한 래플 전용 API 사용
+      }
+
       const { data } = await axiosInstance.get(endpoint);
 
       if (data.isSuccess) {
+        let raffles = [];
+        
+        if (selectedToggle === '찜한 래플') {
+          // 찜한 래플 API 응답 구조에 맞게 데이터 변환
+          raffles = (data.result || []).map((item: any) => {
+            // 현재 시간과 응모 마감 시간 비교
+            const currentTime = new Date().getTime();
+            const endTime = new Date(item.timeUntilEnd).getTime();
+            const isFinished = currentTime > endTime;
+            
+            return {
+              raffleId: item.raffleId,
+              raffleName: item.raffleName,
+              raffleImage: item.imageUrls?.[0] || '',
+              ticketNum: item.ticketNum,
+              applyNum: item.applyCount,
+              timeUntilEnd: item.timeUntilEnd,
+              finished: isFinished, // 현재 시간과 마감 시간 비교 결과
+              liked: true, // 찜한 래플이므로 항상 true
+              raffleStatus: item.raffleStatus, // 필수 속성 추가
+            };
+          });
+        } else {
+          // 기존 마이페이지 API에서 래플 데이터 추출
+          raffles = (data.result.raffles ?? []).map((item: any) => {
+            // 현재 시간과 응모 마감 시간 비교
+            const currentTime = new Date().getTime();
+            const endTime = new Date(item.timeUntilEnd).getTime();
+            const isFinished = currentTime > endTime;
+            
+            return {
+              ...item,
+              finished: isFinished, // 현재 시간과 마감 시간 비교 결과
+            };
+          });
+        }
+
         setProfileData({
           nickname: data.result.nickname || '-',
           followerNum: data.result.followerNum || 0,
           reviewNum: data.result.reviewNum || 0,
-          raffles: data.result.raffles ?? [],
+          raffles: raffles,
+          is_business: data.result.is_business || false,
         });
+
+        // is_business 값 설정 (찜한 래플 API에는 없으므로 별도로 가져와야 함)
+        if (selectedToggle !== '찜한 래플') {
+          setIsBusinessUser(data.result.is_business || false);
+        }
       } else {
         setProfileData(null);
       }
@@ -52,6 +103,17 @@ const MyProfilePage: React.FC = () => {
   useEffect(() => {
     fetchProfileData();
   }, [selectedToggle]);
+
+  // 토글 옵션 결정
+  const getToggleOptions = () => {
+    if (isBusinessUser) {
+      return ['응모한 래플', '주최하는 래플'];
+    } else {
+      return ['응모한 래플', '찜한 래플'];
+    }
+  };
+
+  const toggleOptions = getToggleOptions();
 
   return (
     <Container>
@@ -68,25 +130,26 @@ const MyProfilePage: React.FC = () => {
             username={profileData.nickname}
             followers={profileData.followerNum}
             reviews={profileData.reviewNum}
+            isBusinessUser={isBusinessUser}
+            isUserProfilePage={false} // 마이페이지임을 명시
           />
         )}
 
         <ToggleContainer>
-          <ToggleIndicator selectedToggle={selectedToggle} />
-          <ToggleOption
-            selectedToggle={selectedToggle}
-            value="응모한 래플"
-            onClick={() => setSelectedToggle('응모한 래플')}
-          >
-            응모한 래플
-          </ToggleOption>
-          <ToggleOption
-            selectedToggle={selectedToggle}
-            value="주최하는 래플"
-            onClick={() => setSelectedToggle('주최하는 래플')}
-          >
-            주최하는 래플
-          </ToggleOption>
+          <ToggleIndicator 
+            selectedToggle={selectedToggle} 
+            toggleOptions={toggleOptions}
+          />
+          {toggleOptions.map((option) => (
+            <ToggleOption
+              key={option}
+              selectedToggle={selectedToggle}
+              value={option}
+              onClick={() => setSelectedToggle(option)}
+            >
+              {option}
+            </ToggleOption>
+          ))}
         </ToggleContainer>
 
         {loading ? (
@@ -104,6 +167,7 @@ const MyProfilePage: React.FC = () => {
                 timeUntilEnd={Number(product.timeUntilEnd) || 0}
                 finish={product.finished}
                 like={product.liked}
+                raffleStatus={product.raffleStatus}
               />
             ))}
           </ProductGrid>
@@ -142,9 +206,9 @@ const InnerContainer = styled.div`
 
 const ToggleContainer = styled.div`
   position: relative;
-  width: 100%;
-  max-width: 500px;
+  width: 946px;
   height: 58px;
+  flex-shrink: 0;
   border-radius: 50px;
   background: #f5f5f5;
   margin-bottom: 45px;
@@ -152,18 +216,30 @@ const ToggleContainer = styled.div`
   display: flex;
   align-items: center;
   cursor: pointer;
+
+  @media (max-width: 1024px) {
+    width: 100%;
+    max-width: 946px;
+  }
+
+  @media (max-width: 768px) {
+    width: 100%;
+    max-width: 500px;
+  }
 `;
 
-const ToggleIndicator = styled.div<{ selectedToggle: string }>`
+const ToggleIndicator = styled.div<{ selectedToggle: string; toggleOptions: string[] }>`
   position: absolute;
-  width: 50%;
+  width: ${({ toggleOptions }) => `calc(100% / ${toggleOptions.length})`};
   height: 100%;
   background: #c908ff;
   border-radius: 50px;
   top: 0;
   transition: left 0.3s ease;
-  left: ${({ selectedToggle }) =>
-    selectedToggle === '응모한 래플' ? '0' : '50%'};
+  left: ${({ selectedToggle, toggleOptions }) => {
+    const index = toggleOptions.indexOf(selectedToggle);
+    return `calc(${index} * (100% / ${toggleOptions.length}))`;
+  }};
 `;
 
 const ToggleOption = styled.div<{ selectedToggle: string; value: string }>`

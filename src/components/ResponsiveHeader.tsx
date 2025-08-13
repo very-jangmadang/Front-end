@@ -3,6 +3,7 @@ import media from '../styles/media';
 import icLogo from '../assets/header/icon-logo.svg';
 import icHamburger from '../assets/header/icon-hamburger.svg';
 import ticket from '../assets/ticketLogo.png';
+import wepinLogo from '../assets/header/wepin-logo.svg';
 import { ReactComponent as IcNotice } from '../assets/header/icon-notice.svg';
 import { ReactComponent as IcSetting } from '../assets/header/icon-setting.svg';
 // import icSetting from '../assets/header/icon-setting.svg';
@@ -39,6 +40,23 @@ const ResponsiveHeader = () => {
   const { isAuthenticated, logout } = useAuth();
   const isSearchCompleted = useIsSearchCompleted((v) => v.isSearchCompleted);
   const [searchClicked, setSearchClicked] = useState<boolean>(false);
+  const [isBusinessUser, setIsBusinessUser] = useState<boolean>(false);
+
+  // 사용자의 비즈니스 상태 확인
+  const checkBusinessStatus = async () => {
+    if (!isAuthenticated) return;
+    
+    try {
+      const response = await axiosInstance.get('/api/member/mypage');
+      if (response.data.isSuccess && response.data.result) {
+        // API 응답에 is_business 필드가 있다고 가정
+        setIsBusinessUser(response.data.result.is_business || false);
+      }
+    } catch (error) {
+      console.error('비즈니스 상태 확인 실패:', error);
+      setIsBusinessUser(false);
+    }
+  };
 
   const getSearch = async () => {
     const { data }: { data: TSearch } = await axiosInstance.get(
@@ -123,31 +141,24 @@ const ResponsiveHeader = () => {
     };
   }, [searchRef.current, categoryRef.current]);
 
+  useEffect(() => {
+    if (isAuthenticated) {
+      checkBusinessStatus();
+    } else {
+      setIsBusinessUser(false);
+    }
+  }, [isAuthenticated]);
+
   return (
     <>
       <Wrapper>
         <TopContainer>
+          <WepinLogoLink href="https://www.wepin.io/ko" target="_blank" rel="noopener noreferrer">
+            <WepinLogo src={wepinLogo} alt="Wepin" />
+          </WepinLogoLink>
           <LoginBtn onClick={onClickLoginBtn} state={String(isAuthenticated)}>
             {isAuthenticated ? '로그아웃' : '로그인'}
           </LoginBtn>
-          <LineDiv height={'27px'} margin={'0 32px'} className="line-1" />
-          <NoticeIconDiv
-            onClick={() => {
-              if (isAuthenticated) {
-                navigate('/notification'); // 알림 페이지
-              } else {
-                handleOpenModal();
-              }
-            }}
-          >
-            <IcNotice
-              className="svg"
-              width={18.65}
-              height={21.32}
-              fill={'#8F8E94'}
-            />
-            <IconTextDiv fontSize={'14px'}>알림</IconTextDiv>
-          </NoticeIconDiv>
           <LineDiv height={'27px'} margin={'0 32px'} />
           <SettingIconDiv
             onClick={() => {
@@ -280,18 +291,21 @@ const ResponsiveHeader = () => {
               <IconTextDiv fontSize={'10px'}>충전/환전</IconTextDiv>
             </IconDiv>
 
-            <IconDiv
-              onClick={() => {
-                if (isAuthenticated) {
-                  navigate('/raffle-upload'); // 래플 업로드
-                } else {
-                  handleOpenModal();
-                }
-              }}
-            >
-              <img src={icUpload} width={22} />
-              <IconTextDiv fontSize={'10px'}>래플 업로드</IconTextDiv>
-            </IconDiv>
+            {/* 비즈니스 계정일 때만 래플 업로드 버튼 표시 */}
+            {isBusinessUser && (
+              <IconDiv
+                onClick={() => {
+                  if (isAuthenticated) {
+                    navigate('/raffle-upload'); // 래플 업로드
+                  } else {
+                    handleOpenModal();
+                  }
+                }}
+              >
+                <img src={icUpload} width={22} />
+                <IconTextDiv fontSize={'10px'}>래플 업로드</IconTextDiv>
+              </IconDiv>
+            )}
           </LogoRightContainer>
         </SearchBoxContainer>
       </Wrapper>
@@ -387,6 +401,7 @@ const IconTextDiv = styled.div<{
 
 const SearchBoxContainer = styled.div`
   display: flex;
+  justify-content: center;
   // justify-content: space-between;
   // justify-content: center;
   align-items: center;
@@ -692,5 +707,24 @@ const Line = styled.div`
   background: #e4e4e4;
   ${media.small`
     margin-top: 20px;
+  `}
+`;
+
+const WepinLogoLink = styled.a`
+  text-decoration: none;
+  margin-right: 20px;
+  margin-top: 5px;
+  ${media.small`
+    margin-right: 10px;
+  `}
+`;
+
+const WepinLogo = styled.img`
+  width: 100px;
+  height: 30px;
+  object-fit: contain;
+  ${media.small`
+    width: 80px;
+    height: 24px;
   `}
 `;

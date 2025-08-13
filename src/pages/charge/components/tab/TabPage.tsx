@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import styled from 'styled-components';
 import ticketIcon from '../../../../assets/ticket.svg';
+import veryLogo from '../../../../assets/charge/very-logo.svg';
 import { Icon } from '@iconify/react';
 import { useModalContext } from '../../../../components/Modal/context/ModalContext';
 import ChangeModal from '../modal/ChangeModal';
@@ -162,8 +163,8 @@ function TabPage({ type }: TabTypeProps) {
       </TicketContainer>
       {type === 0 ? (
         <KakaoButtons onClick={handleCharge}>
-          <ResponsiveIcon icon="raphael:bubble" />
-          <Kakao>카카오페이로 결제하기</Kakao>
+          <VeryLogoIcon src={veryLogo} alt="Very Logo" />
+          <Kakao>베리코인으로 충전하기</Kakao>
         </KakaoButtons>
       ) : (
         <ChangeButton onClick={handleNext}>
@@ -421,8 +422,8 @@ const KakaoButtons = styled.button`
   height: 36px;
   border-radius: 7px;
   border: 0;
-  background-color: #fbe44e;
-  color: black;
+  background-color: #c908ff;
+  color: white;
   margin-top: 72px;
   column-gap: 10px;
   transform: translateX(-20px);
@@ -436,6 +437,16 @@ const KakaoButtons = styled.button`
   ${media.small`
     transform: translateY(427px);
     `}
+`;
+
+const VeryLogoIcon = styled.img`
+  width: 27px; /* 15px * 1.8 = 27px */
+  height: 23.4px; /* 13px * 1.8 = 23.4px */
+  margin-left: -5px; /* 왼쪽으로 5픽셀 이동 */
+  ${media.notLarge`
+    width: 34.2px; /* 19px * 1.8 = 34.2px */
+    height: 27px; /* 15px * 1.8 = 27px */
+  `}
 `;
 
 const Kakao = styled.div`

@@ -1,13 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import Checkbox from '@mui/material/Checkbox';
-import CircleChecked from '@mui/icons-material/CheckCircleOutline';
-import CircleUnchecked from '@mui/icons-material/RadioButtonUnchecked';
-import BusinessCheckModal from './BusinessCheckModal';
+import BusinessSignupModal from './BusinessSignupModal';
 import Modal from '../../../components/Modal/Modal';
 import { useModalContext } from '../../../components/Modal/context/ModalContext';
 import media from '../../../styles/media';
-import UnderAgeModal from './UnderAgeModal';
 import logo from '../../../assets/logo.png';
 import { Icon } from '@iconify/react';
 
@@ -15,16 +11,16 @@ interface ModalProps {
   onClose: () => void;
 }
 
-const AgeModal: React.FC<ModalProps> = ({ onClose }) => {
-  const [checked, setChecked] = React.useState([false, false]);
+const BusinessNumberModal: React.FC<ModalProps> = ({ onClose }) => {
+  const [businessNumber, setBusinessNumber] = useState('');
   const { openModal } = useModalContext();
   const [isLargeScreen, setIsLargeScreen] = useState<boolean>(() =>
     typeof window !== 'undefined' ? window.innerWidth >= 745 : false,
   );
 
   useEffect(() => {
-    console.log('=== AgeModal 열림 ===');
-    console.log('현재 체크 상태:', checked);
+    console.log('=== BusinessNumberModal 열림 ===');
+    console.log('사업자 번호:', businessNumber);
     
     const handleResize = () => {
       setIsLargeScreen(window.innerWidth >= 745);
@@ -35,34 +31,22 @@ const AgeModal: React.FC<ModalProps> = ({ onClose }) => {
     return () => {
       window.removeEventListener('resize', handleResize);
     };
-  }, [checked]);
+  }, [businessNumber]);
 
-  const handleChange1 = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setChecked([event.target.checked, false]);
+  const handleBusinessNumberChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setBusinessNumber(event.target.value);
   };
-
-  const handleChange2 = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setChecked([false, event.target.checked]);
-  };
-
-  useEffect(() => {
-    console.log('Checked State:', checked);
-  }, [checked]);
 
   const handleOpenNextModal = () => {
-    console.log('AgeModal - 계속하기 버튼 클릭');
-    console.log('체크 상태:', checked);
+    console.log('BusinessNumberModal - 계속하기 버튼 클릭');
+    console.log('사업자 번호:', businessNumber);
     
-    if (checked[0]) {
-      console.log('만 14세 이상 선택 - BusinessCheckModal 열기');
+    if (businessNumber.trim()) {
+      console.log('사업자 번호 입력 완료 - BusinessSignupModal 열기');
       onClose(); // 현재 모달 닫기
-      openModal(({ onClose }) => <BusinessCheckModal onClose={onClose} />);
-    } else if (checked[1]) {
-      console.log('만 14세 미만 선택 - UnderAgeModal 열기');
-      onClose(); // 현재 모달 닫기
-      openModal(({ onClose }) => <UnderAgeModal onClose={onClose} />);
+      openModal(({ onClose }) => <BusinessSignupModal onClose={onClose} businessNumber={businessNumber} />);
     } else {
-      console.log('나이 선택이 완료되지 않음');
+      console.log('사업자 번호가 입력되지 않음');
       return;
     }
   };
@@ -90,41 +74,18 @@ const AgeModal: React.FC<ModalProps> = ({ onClose }) => {
       <Container>
         <NewOption>
           <Circle />
-          <Title>최소 연령 확인</Title>
+          <Title>사업자 확인</Title>
         </NewOption>
         <Line />
-        <Option style={{ marginBottom: '26px' }}>
-          <Checkbox
-            checked={checked[0]}
-            onChange={handleChange1}
-            icon={<CircleUnchecked />}
-            checkedIcon={<CircleChecked />}
-            sx={{
-              '& .MuiSvgIcon-root': { fontSize: 17 },
-              '&.Mui-checked': {
-                color: '#C908FF',
-              },
-            }}
+        <Short style={{ marginBottom: '26px' }}>사업자 번호를 입력해주세요.</Short>
+        <InputContainer>
+          <Input
+            type="text"
+            placeholder="사업자 번호를 입력해주세요. (-미포함)"
+            value={businessNumber}
+            onChange={handleBusinessNumberChange}
           />
-          <Short>만 14세 이상입니다.</Short>
-        </Option>
-        <Option>
-          <Checkbox
-            checked={checked[1]}
-            onChange={handleChange2}
-            icon={<CircleUnchecked />}
-            checkedIcon={<CircleChecked />}
-            sx={{
-              '& .MuiSvgIcon-root': {
-                fontSize: 17,
-              },
-              '&.Mui-checked': {
-                color: '#C908FF',
-              },
-            }}
-          />
-          <Short>만 14세 미만입니다.</Short>
-        </Option>
+        </InputContainer>
         <Button onClick={handleOpenNextModal}>계속하기</Button>
       </Container>
     </Contents>
@@ -191,6 +152,36 @@ const Circle = styled.div`
   border-radius: 100%;
 `;
 
+const InputContainer = styled.div`
+  margin-bottom: 26px;
+`;
+
+const Input = styled.input`
+  width: 302px;
+  height: 45px;
+  border: 1px solid #8f8e94;
+  border-radius: 7px;
+  padding: 0 15px;
+  font-size: 14px;
+  font-family: Pretendard;
+  
+  &::placeholder {
+    color: #8f8e94;
+  }
+  
+  &:focus {
+    outline: none;
+    border-color: #c908ff;
+  }
+  
+  ${media.medium`
+    width: 344px;
+  `}
+  ${media.small`
+    width: 325px;
+  `}
+`;
+
 const Button = styled.button`
   margin-top: 77px;
   width: 302px;
@@ -254,11 +245,7 @@ const NewOption = styled.div`
   `}
 `;
 
-const Option = styled.div`
-  display: flex;
-  column-gap: 35px;
-  align-items: center;
-`;
+
 
 const Title = styled.div`
   font-size: 16px;
@@ -269,4 +256,4 @@ const Title = styled.div`
     `}
 `;
 
-export default AgeModal;
+export default BusinessNumberModal; 
