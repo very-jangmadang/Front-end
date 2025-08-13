@@ -69,7 +69,7 @@ const SignupModal: React.FC<ModalProps> = ({ onClose, isBusiness = false }) => {
       const response = await RequestSignUp(name, isBusiness);
       console.log('회원가입 성공 응답:', response);
 
-      if (response.code === 'COMMON_200') {
+      if (response.isSuccess) {
         setIsError('');
         console.log('회원가입 성공 - EnterModal 열기');
         onClose(); // 현재 모달 닫기

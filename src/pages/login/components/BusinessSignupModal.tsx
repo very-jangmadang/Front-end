@@ -11,16 +11,14 @@ import { AxiosError } from 'axios';
 
 interface ModalProps {
   onClose: () => void;
-  businessCode: string;
 }
 
-const RequestBusinessSignUp = async (nickname: string, businessCode: string) => {
-  console.log('사업자 회원가입 요청 시작:', { nickname, businessCode, baseURL: axiosInstance.defaults.baseURL });
+const RequestBusinessSignUp = async (nickname: string) => {
+  console.log('사업자 회원가입 요청 시작:', { nickname, baseURL: axiosInstance.defaults.baseURL });
   
   try {
-    const response = await axiosInstance.post('/api/permit/business-signup', {
+    const response = await axiosInstance.post('/api/permit/nickname', {
       nickname,
-      businessCode,
       isBusiness: true,
     }, {
       withCredentials: true,
@@ -37,7 +35,7 @@ const RequestBusinessSignUp = async (nickname: string, businessCode: string) => 
   }
 };
 
-const BusinessSignupModal: React.FC<ModalProps> = ({ onClose, businessCode }) => {
+const BusinessSignupModal: React.FC<ModalProps> = ({ onClose }) => {
   const { openModal } = useModalContext();
   const [isError, setIsError] = useState('');
   const [nickname, setNickname] = useState('');
@@ -55,7 +53,6 @@ const BusinessSignupModal: React.FC<ModalProps> = ({ onClose, businessCode }) =>
   const handleOpenNextModal = async () => {
     console.log('=== 사업자 회원가입 프로세스 시작 ===');
     console.log('입력된 닉네임:', nickname);
-    console.log('사업자 등록번호:', businessCode);
     console.log('정규식 테스트 결과:', regex.test(nickname));
     console.log('현재 axiosInstance baseURL:', axiosInstance.defaults.baseURL);
     console.log('현재 쿠키:', document.cookie);
@@ -65,23 +62,20 @@ const BusinessSignupModal: React.FC<ModalProps> = ({ onClose, businessCode }) =>
       return;
     }
 
-    console.log('사업자 회원가입 프로세스 시작:', { nickname, businessCode, baseURL: axiosInstance.defaults.baseURL });
+    console.log('사업자 회원가입 프로세스 시작:', { nickname, baseURL: axiosInstance.defaults.baseURL });
 
     try {
-      const response = await RequestBusinessSignUp(nickname, businessCode);
+      const response = await RequestBusinessSignUp(nickname);
       console.log('사업자 회원가입 성공 응답:', response);
 
-      if (response.code === 'COMMON_200') {
+      if (response.isSuccess) {
         setIsError('');
         console.log('사업자 회원가입 성공 - EnterModal 열기');
         onClose(); // 현재 모달 닫기
         openModal(({ onClose }) => <EnterModal onClose={onClose} />);
-      } else if (response.code === 'BUSINESS_4008') {
-        console.log('닉네임 중복');
-        setIsError('중복된 닉네임입니다');
       } else {
-        console.log('알 수 없는 응답 코드:', response.code);
-        setIsError('회원가입 중 오류가 발생했습니다.');
+        console.log('회원가입 실패:', response.message);
+        setIsError(response.message || '회원가입 중 오류가 발생했습니다.');
       }
     } catch (err) {
       console.error('사업자 회원가입 처리 중 에러:', err);
@@ -99,14 +93,7 @@ const BusinessSignupModal: React.FC<ModalProps> = ({ onClose, businessCode }) =>
         });
 
         if (error.response.status === 400) {
-          const errorCode = error.response.data?.code;
-
-          if (errorCode === 'BUSINESS_4008') {
-            console.log('닉네임 중복');
-            setIsError('중복된 닉네임입니다');
-          } else {
-            setIsError(error.response.data?.message || '잘못된 요청입니다.');
-          }
+          setIsError(error.response.data?.message || '잘못된 요청입니다.');
         } else if (error.response.status === 401) {
           setIsError('인증이 필요합니다.');
         } else if (error.response.status === 403) {

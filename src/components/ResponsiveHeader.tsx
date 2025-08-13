@@ -26,6 +26,7 @@ import { useAuth } from '../context/AuthContext';
 import { useIsSearchCompleted } from '../store/store';
 import { SyncOutlined, WysiwygOutlined } from '@mui/icons-material';
 
+
 const ResponsiveHeader = () => {
   const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
@@ -40,23 +41,41 @@ const ResponsiveHeader = () => {
   const { isAuthenticated, logout } = useAuth();
   const isSearchCompleted = useIsSearchCompleted((v) => v.isSearchCompleted);
   const [searchClicked, setSearchClicked] = useState<boolean>(false);
-  const [isBusinessUser, setIsBusinessUser] = useState<boolean>(false);
+  const [isBusiness, setIsBusiness] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // 사용자의 비즈니스 상태 확인
-  const checkBusinessStatus = async () => {
-    if (!isAuthenticated) return;
-    
-    try {
-      const response = await axiosInstance.get('/api/member/mypage');
-      if (response.data.isSuccess && response.data.result) {
-        // API 응답에 is_business 필드가 있다고 가정
-        setIsBusinessUser(response.data.result.is_business || false);
+  // 사업자 여부 확인
+  useEffect(() => {
+    const checkBusinessStatus = async () => {
+      try {
+        setIsLoading(true);
+        const response = await axiosInstance.get('/api/permit/me', {
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        });
+        
+        console.log('=== ResponsiveHeader: /api/permit/me API 응답 ===', response.data);
+        
+        if (response.data.isSuccess) {
+          console.log('=== ResponsiveHeader: 사업자 계정입니다 ===');
+          setIsBusiness(true);
+        } else {
+          console.log('=== ResponsiveHeader: 일반 사용자 계정입니다 ===');
+          setIsBusiness(false);
+        }
+      } catch (err) {
+        console.log('=== ResponsiveHeader: /api/permit/me API 실패 - 일반 사용자로 처리 ===', err);
+        setIsBusiness(false);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error('비즈니스 상태 확인 실패:', error);
-      setIsBusinessUser(false);
-    }
-  };
+    };
+
+    checkBusinessStatus();
+  }, []);
 
   const getSearch = async () => {
     const { data }: { data: TSearch } = await axiosInstance.get(
@@ -142,12 +161,8 @@ const ResponsiveHeader = () => {
   }, [searchRef.current, categoryRef.current]);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      checkBusinessStatus();
-    } else {
-      setIsBusinessUser(false);
-    }
-  }, [isAuthenticated]);
+    // userInfo는 useUserInfo 훅에서 자동으로 가져옴
+  }, []);
 
   return (
     <>
@@ -291,8 +306,8 @@ const ResponsiveHeader = () => {
               <IconTextDiv fontSize={'10px'}>충전/환전</IconTextDiv>
             </IconDiv>
 
-            {/* 비즈니스 계정일 때만 래플 업로드 버튼 표시 */}
-            {isBusinessUser && (
+                        {/* 비즈니스 계정일 때만 래플 업로드 버튼 표시 */}
+            {!isLoading && isBusiness && (
               <IconDiv
                 onClick={() => {
                   if (isAuthenticated) {
@@ -306,6 +321,8 @@ const ResponsiveHeader = () => {
                 <IconTextDiv fontSize={'10px'}>래플 업로드</IconTextDiv>
               </IconDiv>
             )}
+            
+
           </LogoRightContainer>
         </SearchBoxContainer>
       </Wrapper>

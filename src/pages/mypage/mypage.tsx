@@ -8,6 +8,7 @@ import NameEditModal from '../../components/Modal/modals/NameEditModal';
 import axiosInstance from '../../apis/axiosInstance';
 import media from '../../styles/media';
 
+
 interface ProfileData {
   nickname: string;
   followerNum: number;
@@ -21,8 +22,39 @@ const MyProfilePage: React.FC = () => {
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [isNameEditModalOpen, setIsNameEditModalOpen] = useState(false);
-  const [isBusinessUser, setIsBusinessUser] = useState<boolean>(false);
+  const [isBusiness, setIsBusiness] = useState<boolean>(false);
+  const [isBusinessLoading, setIsBusinessLoading] = useState<boolean>(true);
+
   const navigate = useNavigate();
+
+  // 사업자 여부 확인
+  const checkBusinessStatus = async () => {
+    try {
+      setIsBusinessLoading(true);
+      const response = await axiosInstance.get('/api/permit/me', {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      });
+      
+      console.log('=== MyProfilePage: /api/permit/me API 응답 ===', response.data);
+      
+      if (response.data.isSuccess) {
+        console.log('=== MyProfilePage: 사업자 계정입니다 ===');
+        setIsBusiness(true);
+      } else {
+        console.log('=== MyProfilePage: 일반 사용자 계정입니다 ===');
+        setIsBusiness(false);
+      }
+    } catch (err) {
+      console.log('=== MyProfilePage: /api/permit/me API 실패 - 일반 사용자로 처리 ===', err);
+      setIsBusiness(false);
+    } finally {
+      setIsBusinessLoading(false);
+    }
+  };
 
   const fetchProfileData = async () => {
     setLoading(true);
@@ -85,10 +117,7 @@ const MyProfilePage: React.FC = () => {
           is_business: data.result.is_business || false,
         });
 
-        // is_business 값 설정 (찜한 래플 API에는 없으므로 별도로 가져와야 함)
-        if (selectedToggle !== '찜한 래플') {
-          setIsBusinessUser(data.result.is_business || false);
-        }
+        // is_business 값은 API 응답에서 가져옴
       } else {
         setProfileData(null);
       }
@@ -101,12 +130,16 @@ const MyProfilePage: React.FC = () => {
   };
 
   useEffect(() => {
+    checkBusinessStatus();
+  }, []);
+
+  useEffect(() => {
     fetchProfileData();
   }, [selectedToggle]);
 
-  // 토글 옵션 결정
+    // 토글 옵션 결정
   const getToggleOptions = () => {
-    if (isBusinessUser) {
+    if (isBusiness) {
       return ['응모한 래플', '주최하는 래플'];
     } else {
       return ['응모한 래플', '찜한 래플'];
@@ -130,7 +163,7 @@ const MyProfilePage: React.FC = () => {
             username={profileData.nickname}
             followers={profileData.followerNum}
             reviews={profileData.reviewNum}
-            isBusinessUser={isBusinessUser}
+            isBusinessUser={isBusiness}
             isUserProfilePage={false} // 마이페이지임을 명시
           />
         )}

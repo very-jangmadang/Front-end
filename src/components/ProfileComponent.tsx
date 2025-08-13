@@ -166,8 +166,8 @@ const ProfileComponent: React.FC<ProfileProps> = ({
             {isBusinessUser && (
               <RankIcon src={platinum3} alt="Platinum Rank" />
             )}
-            {/* 마이페이지일 때만 닉네임 변경 버튼 표시 */}
-            {!isUserProfilePage && (
+            {/* 마이페이지이고 사업자가 아닐 때만 닉네임 변경 버튼 표시 */}
+            {!isUserProfilePage && !isBusinessUser && (
               <NicknameEditButton onClick={() => setIsNameEditModalOpen(true)}>
                 닉네임 변경
               </NicknameEditButton>
@@ -199,6 +199,18 @@ const ProfileComponent: React.FC<ProfileProps> = ({
             )}
           </StatsContainer>
 
+          {/* 사업자 계정일 때만 추가 버튼들 표시 */}
+          {isBusinessUser && !isUserProfilePage && (
+            <BusinessButtonContainer>
+              <StyledButton onClick={() => navigate("/mypage/following-list")}>
+                팔로잉 목록
+              </StyledButton>
+              <StyledButton onClick={() => navigate("/mypage/reviews")}>
+                상점 후기
+              </StyledButton>
+            </BusinessButtonContainer>
+          )}
+
           <ButtonContainer>
             {/* 남의 페이지일 때: 팔로우하기 버튼 */}
             {isUserProfilePage ? (
@@ -213,8 +225,8 @@ const ProfileComponent: React.FC<ProfileProps> = ({
         </UserDetails>
       </ProfileContent>
 
-      {/* 마이페이지일 때만 닉네임 변경 모달 표시 */}
-      {!isUserProfilePage && isNameEditModalOpen && (
+      {/* 마이페이지이고 사업자가 아닐 때만 닉네임 변경 모달 표시 */}
+      {!isUserProfilePage && !isBusinessUser && isNameEditModalOpen && (
         <NameEditModal
           currentNickname={username}
           onClose={handleCloseModal}
@@ -271,6 +283,22 @@ const ProfileContent = styled.div`
   @media (max-width: 768px) { /* 스마트폰 가로 & 태블릿 세로 */
     flex-direction: column;
     gap: 45px; /* 세로 정렬 시 프로필 & 줄 간격 45px 유지 */
+  }
+`;
+
+const BusinessButtonContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 16px;
+  margin-left: -10px;
+  width: 100%;
+  justify-content: flex-start;
+
+  @media (max-width: 390px) {
+    gap: 12px;
+    margin-top: 12px;
+    margin-left: -10px;
   }
 `;
 
