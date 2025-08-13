@@ -13,12 +13,12 @@ interface ModalProps {
   onClose: () => void;
 }
 
-const RequestBusinessSignUp = async (nickname: string) => {
-  console.log('사업자 회원가입 요청 시작:', { nickname, baseURL: axiosInstance.defaults.baseURL });
+const RequestBusinessSignUp = async (businessName: string) => {
+  console.log('사업자 회원가입 요청 시작:', { businessName, baseURL: axiosInstance.defaults.baseURL });
   
   try {
     const response = await axiosInstance.post('/api/permit/nickname', {
-      nickname,
+      nickname: businessName, // 백엔드에서는 nickname으로 전송
       isBusiness: true,
     }, {
       withCredentials: true,
@@ -38,34 +38,34 @@ const RequestBusinessSignUp = async (nickname: string) => {
 const BusinessSignupModal: React.FC<ModalProps> = ({ onClose }) => {
   const { openModal } = useModalContext();
   const [isError, setIsError] = useState('');
-  const [nickname, setNickname] = useState('');
+  const [businessName, setBusinessName] = useState('');
 
   const regex = /^[가-힣a-zA-Z0-9]{2,10}$/;
 
-  const handleChangeNickname = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setNickname(event.target.value);
+  const handleChangeBusinessName = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setBusinessName(event.target.value);
   };
 
   useEffect(() => {
-    console.log('닉네임:', nickname);
-  }, [nickname]);
+    console.log('사업자명:', businessName);
+  }, [businessName]);
 
   const handleOpenNextModal = async () => {
     console.log('=== 사업자 회원가입 프로세스 시작 ===');
-    console.log('입력된 닉네임:', nickname);
-    console.log('정규식 테스트 결과:', regex.test(nickname));
+    console.log('입력된 사업자명:', businessName);
+    console.log('정규식 테스트 결과:', regex.test(businessName));
     console.log('현재 axiosInstance baseURL:', axiosInstance.defaults.baseURL);
     console.log('현재 쿠키:', document.cookie);
     
-    if (!regex.test(nickname)) {
-      setIsError('닉네임은 2~10자의 한글 또는 영어만 사용 가능합니다.');
+    if (!regex.test(businessName)) {
+      setIsError('사업자명은 2~10자의 한글 또는 영어만 사용 가능합니다.');
       return;
     }
 
-    console.log('사업자 회원가입 프로세스 시작:', { nickname, baseURL: axiosInstance.defaults.baseURL });
+    console.log('사업자 회원가입 프로세스 시작:', { businessName, baseURL: axiosInstance.defaults.baseURL });
 
     try {
-      const response = await RequestBusinessSignUp(nickname);
+      const response = await RequestBusinessSignUp(businessName);
       console.log('사업자 회원가입 성공 응답:', response);
 
       if (response.isSuccess) {
@@ -168,16 +168,16 @@ const BusinessSignupModal: React.FC<ModalProps> = ({ onClose }) => {
         )}
 
         <Box>
-          <Name>닉네임</Name>
+          <Name>사업자명</Name>
           <Error>{isError}</Error>
         </Box>
         <Input
           isError={!!isError}
-          value={nickname}
-          onChange={handleChangeNickname}
-          placeholder="닉네임을 입력하세요. (한글 및 영어 2~10자)"
+          value={businessName}
+          onChange={handleChangeBusinessName}
+          placeholder="사업자명을 입력하세요. (한글 및 영어 2~10자)"
         />
-        <Button disabled={!nickname} onClick={handleOpenNextModal}>
+        <Button disabled={!businessName} onClick={handleOpenNextModal}>
           회원가입
         </Button>
       </Container>
