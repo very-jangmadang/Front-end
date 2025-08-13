@@ -21,7 +21,7 @@ const WepinInitializer = () => {
       try {
         const response = await axiosInstance.get('/api/permit/idtoken');
         const idToken = response.data.result;
-
+        console.log('Received idToken:', idToken);
         // idToken이 비어있으면 중단합니다.
         if (!idToken) {
           console.log(
@@ -35,39 +35,54 @@ const WepinInitializer = () => {
           appId: import.meta.env.VITE_WEPIN_APP_ID,
           appKey: import.meta.env.VITE_WEPIN_APP_KEY,
         });
-        await wepinLogin.init();
+        await wepinLogin.init('ko');
+
+        if (wepinLogin.isInitialized()) {
+          console.log('wepinSDK is initialized!');
+        } else {
+          console.log('wepinSDK is not initialized!');
+        }
 
         // 공식 문서에 따라 'token' 파라미터를 사용합니다.
         const loginResult = await wepinLogin.loginWithIdToken({
           token: idToken,
         });
-
+        console.log('Wepin Firebase 로그인 결과:', loginResult);
         if (loginResult.error || !loginResult.token) {
           console.error('Wepin Firebase 로그인 실패:', loginResult.error);
           return;
         }
 
-        // Firebase 인증 토큰을 Wepin 서비스용 토큰으로 교환합니다. (중요!)
-        const wepinUser = await wepinLogin.loginWepin(loginResult);
-        if (!wepinUser || !wepinUser.token) {
+        // Firebase 인증 토큰을 Wepin 서비스용 토큰으로 교환합니다.
+        const userInfo = await wepinLogin.loginWepin(loginResult);
+        if (!userInfo || !userInfo.token) {
           throw new Error(
             'Wepin 서비스 로그인에 실패했습니다 (Failed to get Wepin service token).',
           );
         }
 
+        const userStatus = userInfo.userStatus;
+        if (
+          userStatus.loginStatus === 'pinRequired' ||
+          userStatus.loginStatus === 'registerRequired'
+        ) {
+          console.log('User needs to register.');
+        }
+
         console.log('Wepin Login 성공. Wepin SDK를 초기화합니다.');
 
-        // @wepin/sdk-js를 Wepin의 토큰으로 초기화
+        /* @wepin/sdk-js를 Wepin의 토큰으로 초기화
         const wepinSDK = new WepinSDK({
           appId: import.meta.env.VITE_WEPIN_APP_ID,
           appKey: import.meta.env.VITE_WEPIN_APP_KEY,
         });
         await wepinSDK.init({ defaultLanguage: 'ko' });
         // loginWepin()을 통해 얻은 Wepin 전용 토큰을 사용해야 합니다.
-        await wepinSDK.setToken(wepinUser.token);
+        await wepinSDK.setToken(userInfo.token);
 
         console.log('Wepin SDK 인증 완료.');
         setWepin(wepinSDK); // 인증된 SDK 인스턴스를 Context에 저장
+        */
       } catch (error) {
         if (axios.isAxiosError(error) && error.response) {
           console.log(
