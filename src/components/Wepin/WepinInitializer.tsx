@@ -19,11 +19,6 @@ const WepinInitializer = () => {
     const initWepin = async () => {
       let idToken: string | null = null;
 
-      // 로컬 개발 환경에서는 .env.local 파일의 테스트 토큰을 우선적으로 사용합니다.
-      if (import.meta.env.DEV) {
-        idToken = import.meta.env.VITE_WEPIN_TEST_ID_TOKEN || null;
-      }
-
       // 테스트 토큰이 없거나 운영 환경일 경우 쿠키에서 가져옵니다.
       if (!idToken) {
         idToken = getCookie('idToken');
