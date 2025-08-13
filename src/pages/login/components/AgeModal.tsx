@@ -55,9 +55,11 @@ const AgeModal: React.FC<ModalProps> = ({ onClose }) => {
     
     if (checked[0]) {
       console.log('만 14세 이상 선택 - BusinessCheckModal 열기');
+      onClose(); // 현재 모달 닫기
       openModal(({ onClose }) => <BusinessCheckModal onClose={onClose} />);
     } else if (checked[1]) {
       console.log('만 14세 미만 선택 - UnderAgeModal 열기');
+      onClose(); // 현재 모달 닫기
       openModal(({ onClose }) => <UnderAgeModal onClose={onClose} />);
     } else {
       console.log('나이 선택이 완료되지 않음');

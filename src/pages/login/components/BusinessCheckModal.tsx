@@ -55,9 +55,11 @@ const BusinessCheckModal: React.FC<ModalProps> = ({ onClose }) => {
     
     if (checked[0]) {
       console.log('사업자 계정 선택 - BusinessNumberModal 열기');
+      onClose(); // 현재 모달 닫기
       openModal(({ onClose }) => <BusinessNumberModal onClose={onClose} />);
     } else if (checked[1]) {
       console.log('일반 계정 선택 - SignupModal 열기');
+      onClose(); // 현재 모달 닫기
       openModal(({ onClose }) => <SignupModal onClose={onClose} isBusiness={false} />);
     } else {
       console.log('계정 타입 선택이 완료되지 않음');

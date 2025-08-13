@@ -72,6 +72,7 @@ const SignupModal: React.FC<ModalProps> = ({ onClose, isBusiness = false }) => {
       if (response.code === 'COMMON_200') {
         setIsError('');
         console.log('회원가입 성공 - EnterModal 열기');
+        onClose(); // 현재 모달 닫기
         openModal(({ onClose }) => <EnterModal onClose={onClose} />);
       } else if (response.code === 'USER_4008') {
         console.log('닉네임 중복');

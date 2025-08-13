@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import Modal from '../../../components/Modal/Modal';
-import { useModalContext } from '../../../components/Modal/context/ModalContext';
+import logo from '../../../assets/logo.png';
 import EnterModal from './EnterModal';
+import Modal from '../../../components/Modal/Modal';
+import media from '../../../styles/media';
+import { useModalContext } from '../../../components/Modal/context/ModalContext';
+import { Icon } from '@iconify/react';
 import axiosInstance from '../../../apis/axiosInstance';
 import { AxiosError } from 'axios';
-import media from '../../../styles/media';
-import logo from '../../../assets/logo.png';
-import { Icon } from '@iconify/react';
 
 interface ModalProps {
   onClose: () => void;
@@ -41,9 +41,6 @@ const BusinessSignupModal: React.FC<ModalProps> = ({ onClose, businessNumber }) 
   const { openModal } = useModalContext();
   const [isError, setIsError] = useState('');
   const [businessName, setBusinessName] = useState('');
-  const [isLargeScreen, setIsLargeScreen] = useState<boolean>(() =>
-    typeof window !== 'undefined' ? window.innerWidth >= 745 : false,
-  );
 
   const regex = /^[가-힣a-zA-Z0-9]{2,10}$/;
 
@@ -53,16 +50,6 @@ const BusinessSignupModal: React.FC<ModalProps> = ({ onClose, businessNumber }) 
 
   useEffect(() => {
     console.log('사업자명:', businessName);
-    
-    const handleResize = () => {
-      setIsLargeScreen(window.innerWidth >= 745);
-    };
-
-    window.addEventListener('resize', handleResize);
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
   }, [businessName]);
 
   const handleOpenNextModal = async () => {
@@ -87,6 +74,7 @@ const BusinessSignupModal: React.FC<ModalProps> = ({ onClose, businessNumber }) 
       if (response.code === 'COMMON_200') {
         setIsError('');
         console.log('사업자 회원가입 성공 - EnterModal 열기');
+        onClose(); // 현재 모달 닫기
         openModal(({ onClose }) => <EnterModal onClose={onClose} />);
       } else if (response.code === 'BUSINESS_4008') {
         console.log('사업자명 중복');
@@ -104,17 +92,59 @@ const BusinessSignupModal: React.FC<ModalProps> = ({ onClose, businessNumber }) 
       }>;
 
       if (error.response) {
-        console.error('에러 응답:', error.response.data);
-        if (error.response.data?.code === 'BUSINESS_4008') {
-          setIsError('중복된 사업자명입니다');
+        console.error('서버 응답 에러:', {
+          status: error.response.status,
+          data: error.response.data,
+          headers: error.response.headers
+        });
+
+        if (error.response.status === 400) {
+          const errorCode = error.response.data?.code;
+
+          if (errorCode === 'BUSINESS_4008') {
+            console.log('사업자명 중복');
+            setIsError('중복된 사업자명입니다');
+          } else {
+            setIsError(error.response.data?.message || '잘못된 요청입니다.');
+          }
+        } else if (error.response.status === 401) {
+          setIsError('인증이 필요합니다.');
+        } else if (error.response.status === 403) {
+          setIsError('권한이 없습니다.');
+        } else if (error.response.status === 500) {
+          setIsError('서버 오류가 발생했습니다.');
         } else {
-          setIsError('회원가입 중 오류가 발생했습니다.');
+          setIsError(error.response.data?.message || '회원가입 중 오류가 발생했습니다.');
         }
+      } else if (error.request) {
+        console.error('네트워크 에러:', error.request);
+        setIsError('네트워크 연결을 확인해주세요.');
       } else {
-        setIsError('네트워크 오류가 발생했습니다.');
+        console.error('기타 에러:', error.message);
+        setIsError('회원가입 중 오류가 발생했습니다.');
       }
     }
   };
+
+  useEffect(() => {
+    console.log('현재 isError 상태:', isError);
+  }, [isError]);
+
+  const [isLargeScreen, setIsLargeScreen] = useState<boolean>(() =>
+    typeof window !== 'undefined' ? window.innerWidth >= 745 : false,
+  );
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsLargeScreen(window.innerWidth >= 745);
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
 
   const Content = (
     <Contents>
@@ -131,32 +161,78 @@ const BusinessSignupModal: React.FC<ModalProps> = ({ onClose, businessNumber }) 
               onClick={onClose}
             />
           </IconBox>
-          <Flex>
-            <Img src={logo} />
-          </Flex>
         </>
       )}
+      <Logo>
+        <Img src={logo} />
+      </Logo>
       <Container>
-        <Title>회원 정보</Title>
-        <Line />
-        <InputContainer>
-          <Label>사업자명</Label>
-          <Input
-            type="text"
-            placeholder="사업자명을 입력하세요. (한글, 숫자, 영어 2~10자)"
-            value={businessName}
-            onChange={handleChangeBusinessName}
-            style={{ borderColor: isError ? '#c908ff' : '#8f8e94' }}
-          />
-          {isError && <ErrorText>{isError}</ErrorText>}
-        </InputContainer>
-        <Button onClick={handleOpenNextModal}>회원가입</Button>
+        {isLargeScreen ? (
+          <>
+            <Line />
+            <Info>회원 정보</Info>
+          </>
+        ) : (
+          <Border>
+            <ShortLine />
+            <And>회원가입</And>
+            <ShortLine />
+          </Border>
+        )}
+
+        <Box>
+          <Name>사업자명</Name>
+          <Error>{isError}</Error>
+        </Box>
+        <Input
+          isError={!!isError}
+          value={businessName}
+          onChange={handleChangeBusinessName}
+          placeholder="사업자명을 입력하세요. (한글 및 영어 2~10자)"
+        />
+        <Button disabled={!businessName} onClick={handleOpenNextModal}>
+          회원가입
+        </Button>
       </Container>
     </Contents>
   );
 
   return isLargeScreen ? <Modal onClose={onClose}>{Content}</Modal> : Content;
 };
+
+const Border = styled.div`
+  display: flex;
+  column-gap: 10.7px;
+  align-items: center;
+  ${media.medium`
+    margin-bottom: 67px;
+    `}
+  ${media.small`
+    margin-bottom: 48px;
+    `}
+`;
+
+const And = styled.div`
+  color: #c1c1c1;
+  text-align: center;
+  font-size: 17px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: normal;
+  ${media.small`
+    font-size: 12px;
+    font-weight: 600;  
+   `}
+`;
+
+const ShortLine = styled.div`
+  width: 177px;
+  height: 1px;
+  background-color: #c1c1c1;
+  ${media.small`
+    width: 119px;   
+  `}
+`;
 
 const IconBox = styled.div`
   display: block;
@@ -171,17 +247,48 @@ const Flex = styled.div`
   justify-content: center;
 `;
 
-const Img = styled.img`
-  width: 172px;
-  height: 80px;
+const Box = styled.div`
+  display: flex;
+  column-gap: 28px;
+  margin-bottom: 7px;
   ${media.medium`
-    margin-bottom:301px;
-    margin-top: 231px;
-  `}
+    column-gap: 40px;
+    `}
   ${media.small`
-    margin-bottom:220px;
-    margin-top: 178px;
-  `}
+    column-gap: 28px;
+    transform: translateX(40px);
+    `}
+`;
+
+const Error = styled.div`
+  width: 234px;
+  height: 17px;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 150%;
+  color: #c908ff;
+  font-family: 'Noto Sans KR';
+  transform: translateX(-20px);
+  ${media.medium`
+    font-size: 15px;
+    width: 320.583px;
+    height: 20.197px;
+    `}
+  ${media.small`
+      font-size: 11px;
+      `}
+`;
+
+const Container = styled.div`
+  padding-left: 61px;
+  ${media.notLarge`
+    padding-left: 0px;
+    padding-top: 0px;
+    display: flex;
+    flex-direction: column;
+    align-items: center
+    `}
 `;
 
 const Contents = styled.div`
@@ -201,82 +308,17 @@ const Contents = styled.div`
   `}
 `;
 
-const Container = styled.div`
-  padding-left: 61px;
+const Img = styled.img`
+  width: 134px;
+  height: 63px;
   ${media.notLarge`
-    padding-left: 0px;
-    padding-top: 0px;
+    width: 172px;
+    height: 80px;
   `}
-`;
-
-const Title = styled.div`
-  font-size: 16px;
-  font-style: normal;
-  font-weight: 600;
-  margin-top: 127px;
-  margin-bottom: 25px;
-  ${media.notLarge`
-    margin-top: 0px;
-  `}
-`;
-
-const Line = styled.div`
-  width: 302px;
-  height: 1px;
-  background: #8f8e94;
-  margin-bottom: 32px;
-  ${media.medium`
-    width: 344px;
-  `}
-  ${media.small`
-    width: 302px;
-  `}
-`;
-
-const InputContainer = styled.div`
-  margin-bottom: 32px;
-`;
-
-const Label = styled.div`
-  font-size: 14px;
-  font-weight: 500;
-  margin-bottom: 8px;
-  color: #000000;
-`;
-
-const Input = styled.input`
-  width: 302px;
-  height: 45px;
-  border: 1px solid #8f8e94;
-  border-radius: 7px;
-  padding: 0 15px;
-  font-size: 14px;
-  font-family: Pretendard;
-  
-  &::placeholder {
-    color: #8f8e94;
-  }
-  
-  &:focus {
-    outline: none;
-    border-color: #c908ff;
-  }
-  
-  ${media.medium`
-    width: 344px;
-  `}
-  ${media.small`
-    width: 325px;
-  `}
-`;
-
-const ErrorText = styled.div`
-  color: #ff0000;
-  font-size: 12px;
-  margin-top: 8px;
 `;
 
 const Button = styled.button`
+  margin-top: 145px;
   width: 302px;
   height: 39px;
   border-radius: 7px;
@@ -290,13 +332,101 @@ const Button = styled.button`
   font-style: normal;
   font-weight: 700;
   ${media.medium`
+    margin-top: 361px;
     width: 344px;
     height: 45px;
+    margin-bottom: 181px;
     `}
   ${media.small`
+     margin-top: 330px;
      width: 325px;
      height: 45px;
-     `}
+     margin-bottom: 47px;
+    `}
+`;
+
+const Input = styled.input<{ isError: boolean }>`
+  padding-left: 14px;
+  width: 273px;
+  height: 30px;
+  border-radius: 7px;
+  border: ${({ isError }) => (isError ? '1px solid #C908FF' : 'none')};
+  background-color: #f7f7f7;
+  font-size: 11px;
+  outline: none;
+  &::placeholder {
+    font-size: 11px;
+    font-style: normal;
+    font-weight: 300;
+    color: #7d7d7d;
+    font-family: Pretendard;
+    transform: translateY(1px);
+  }
+  ${media.medium`
+    width: 420px;
+    height: 44px;
+    font-size: 16px;
+    &::placeholder {
+    font-size: 16px;
+    transform: translateY(2px);
+  }
+  `}
+  ${media.small`
+    width: 302px;
+    height: 36px;
+    font-size: 13px;
+    &::placeholder {
+    font-size: 13px;
+    transform: translateY(2px);
+  }
+      `}
+`;
+
+const Name = styled.div`
+  font-size: 15px;
+  font-style: normal;
+  font-weight: 400;
+  ${media.medium`
+    font-size: 18px;
+    font-weight: 500;
+  `}
+  ${media.small`
+    font-size: 15px;
+    font-weight: 500;
+    width: 50px;
+  `}
+`;
+
+const Info = styled.div`
+  color: #c908ff;
+  font-family: Pretendard;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 400;
+  margin-bottom: 42px;
+`;
+
+const Logo = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 30px;
+  ${media.medium`
+    margin-top: 175px;
+    margin-bottom: 64px;
+  `}
+  ${media.small`
+    margin-top: 167px;
+    margin-bottom: 34px;
+  `}
+`;
+
+const Line = styled.div`
+  width: 302px;
+  height: 1px;
+  background-color: #8f8e94;
+  margin-top: 23px;
+  margin-bottom: 11px;
 `;
 
 export default BusinessSignupModal; 

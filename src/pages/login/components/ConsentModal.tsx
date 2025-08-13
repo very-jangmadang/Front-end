@@ -55,6 +55,7 @@ const ConsentModal: React.FC<ModalProps> = ({ onClose }) => {
     
     if (checked[0] && checked[1]) {
       console.log('모든 약관 동의 완료 - AgeModal 열기');
+      onClose(); // 현재 모달 닫기
       openModal(({ onClose }) => <AgeModal onClose={onClose} />);
     } else {
       console.log('약관 동의가 완료되지 않음');

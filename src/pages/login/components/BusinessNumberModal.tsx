@@ -43,6 +43,7 @@ const BusinessNumberModal: React.FC<ModalProps> = ({ onClose }) => {
     
     if (businessNumber.trim()) {
       console.log('사업자 번호 입력 완료 - BusinessSignupModal 열기');
+      onClose(); // 현재 모달 닫기
       openModal(({ onClose }) => <BusinessSignupModal onClose={onClose} businessNumber={businessNumber} />);
     } else {
       console.log('사업자 번호가 입력되지 않음');
