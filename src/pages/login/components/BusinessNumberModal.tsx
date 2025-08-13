@@ -6,13 +6,15 @@ import { useModalContext } from '../../../components/Modal/context/ModalContext'
 import media from '../../../styles/media';
 import logo from '../../../assets/logo.png';
 import { Icon } from '@iconify/react';
+import axiosInstance from '../../../apis/axiosInstance';
+import { AxiosError } from 'axios';
 
 interface ModalProps {
   onClose: () => void;
 }
 
 const BusinessNumberModal: React.FC<ModalProps> = ({ onClose }) => {
-  const [businessNumber, setBusinessNumber] = useState('');
+  const [businessCode, setBusinessCode] = useState('');
   const { openModal } = useModalContext();
   const [isLargeScreen, setIsLargeScreen] = useState<boolean>(() =>
     typeof window !== 'undefined' ? window.innerWidth >= 745 : false,
@@ -20,7 +22,7 @@ const BusinessNumberModal: React.FC<ModalProps> = ({ onClose }) => {
 
   useEffect(() => {
     console.log('=== BusinessNumberModal 열림 ===');
-    console.log('사업자 번호:', businessNumber);
+    console.log('사업자 등록번호:', businessCode);
     
     const handleResize = () => {
       setIsLargeScreen(window.innerWidth >= 745);
@@ -31,23 +33,45 @@ const BusinessNumberModal: React.FC<ModalProps> = ({ onClose }) => {
     return () => {
       window.removeEventListener('resize', handleResize);
     };
-  }, [businessNumber]);
+  }, [businessCode]);
 
-  const handleBusinessNumberChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setBusinessNumber(event.target.value);
+  const handleBusinessCodeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setBusinessCode(event.target.value);
   };
 
-  const handleOpenNextModal = () => {
+  const handleOpenNextModal = async () => {
     console.log('BusinessNumberModal - 계속하기 버튼 클릭');
-    console.log('사업자 번호:', businessNumber);
+    console.log('사업자 등록번호:', businessCode);
     
-    if (businessNumber.trim()) {
-      console.log('사업자 번호 입력 완료 - BusinessSignupModal 열기');
-      onClose(); // 현재 모달 닫기
-      openModal(({ onClose }) => <BusinessSignupModal onClose={onClose} businessNumber={businessNumber} />);
-    } else {
-      console.log('사업자 번호가 입력되지 않음');
+    if (!businessCode.trim()) {
+      console.log('사업자 등록번호가 입력되지 않음');
       return;
+    }
+
+    try {
+      // 사업자등록번호 검증 API 호출 (isBusiness: true와 함께)
+      const response = await axiosInstance.post('/api/permit/verify-business', {
+        businessCode,
+        isBusiness: true,
+      }, {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      });
+
+      if (response.data.code === 'COMMON_200') {
+        console.log('사업자등록번호 검증 성공 - BusinessSignupModal 열기');
+        onClose(); // 현재 모달 닫기
+        openModal(({ onClose }) => <BusinessSignupModal onClose={onClose} businessCode={businessCode} />);
+      } else {
+        console.log('사업자등록번호 검증 실패:', response.data.message);
+        // 에러 처리 로직 추가 가능
+      }
+    } catch (error) {
+      console.error('사업자등록번호 검증 요청 실패:', error);
+      // 에러 처리 로직 추가 가능
     }
   };
 
@@ -77,13 +101,13 @@ const BusinessNumberModal: React.FC<ModalProps> = ({ onClose }) => {
           <Title>사업자 확인</Title>
         </NewOption>
         <Line />
-        <Short style={{ marginBottom: '26px' }}>사업자 번호를 입력해주세요.</Short>
+        <Short style={{ marginBottom: '26px' }}>사업자 등록번호를 입력해주세요.</Short>
         <InputContainer>
           <Input
             type="text"
-            placeholder="사업자 번호를 입력해주세요. (-미포함)"
-            value={businessNumber}
-            onChange={handleBusinessNumberChange}
+            placeholder="사업자 등록번호를 입력해주세요. (-미포함)"
+            value={businessCode}
+            onChange={handleBusinessCodeChange}
           />
         </InputContainer>
         <Button onClick={handleOpenNextModal}>계속하기</Button>

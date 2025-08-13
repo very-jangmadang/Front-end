@@ -32,6 +32,7 @@ const NicknameChangeModal: React.FC<ModalProps> = ({ onClose }) => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
+        credentials: "include",
         body: JSON.stringify({ nickname }),
       });
 

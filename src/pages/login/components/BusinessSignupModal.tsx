@@ -11,16 +11,16 @@ import { AxiosError } from 'axios';
 
 interface ModalProps {
   onClose: () => void;
-  businessNumber: string;
+  businessCode: string;
 }
 
-const RequestBusinessSignUp = async (businessName: string, businessNumber: string) => {
-  console.log('사업자 회원가입 요청 시작:', { businessName, businessNumber, baseURL: axiosInstance.defaults.baseURL });
+const RequestBusinessSignUp = async (nickname: string, businessCode: string) => {
+  console.log('사업자 회원가입 요청 시작:', { nickname, businessCode, baseURL: axiosInstance.defaults.baseURL });
   
   try {
     const response = await axiosInstance.post('/api/permit/business-signup', {
-      businessName,
-      businessNumber,
+      nickname,
+      businessCode,
       isBusiness: true,
     }, {
       withCredentials: true,
@@ -37,38 +37,38 @@ const RequestBusinessSignUp = async (businessName: string, businessNumber: strin
   }
 };
 
-const BusinessSignupModal: React.FC<ModalProps> = ({ onClose, businessNumber }) => {
+const BusinessSignupModal: React.FC<ModalProps> = ({ onClose, businessCode }) => {
   const { openModal } = useModalContext();
   const [isError, setIsError] = useState('');
-  const [businessName, setBusinessName] = useState('');
+  const [nickname, setNickname] = useState('');
 
   const regex = /^[가-힣a-zA-Z0-9]{2,10}$/;
 
-  const handleChangeBusinessName = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setBusinessName(event.target.value);
+  const handleChangeNickname = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setNickname(event.target.value);
   };
 
   useEffect(() => {
-    console.log('사업자명:', businessName);
-  }, [businessName]);
+    console.log('닉네임:', nickname);
+  }, [nickname]);
 
   const handleOpenNextModal = async () => {
     console.log('=== 사업자 회원가입 프로세스 시작 ===');
-    console.log('입력된 사업자명:', businessName);
-    console.log('사업자 번호:', businessNumber);
-    console.log('정규식 테스트 결과:', regex.test(businessName));
+    console.log('입력된 닉네임:', nickname);
+    console.log('사업자 등록번호:', businessCode);
+    console.log('정규식 테스트 결과:', regex.test(nickname));
     console.log('현재 axiosInstance baseURL:', axiosInstance.defaults.baseURL);
     console.log('현재 쿠키:', document.cookie);
     
-    if (!regex.test(businessName)) {
-      setIsError('사업자명은 2~10자의 한글 또는 영어만 사용 가능합니다.');
+    if (!regex.test(nickname)) {
+      setIsError('닉네임은 2~10자의 한글 또는 영어만 사용 가능합니다.');
       return;
     }
 
-    console.log('사업자 회원가입 프로세스 시작:', { businessName, businessNumber, baseURL: axiosInstance.defaults.baseURL });
+    console.log('사업자 회원가입 프로세스 시작:', { nickname, businessCode, baseURL: axiosInstance.defaults.baseURL });
 
     try {
-      const response = await RequestBusinessSignUp(businessName, businessNumber);
+      const response = await RequestBusinessSignUp(nickname, businessCode);
       console.log('사업자 회원가입 성공 응답:', response);
 
       if (response.code === 'COMMON_200') {
@@ -77,8 +77,8 @@ const BusinessSignupModal: React.FC<ModalProps> = ({ onClose, businessNumber }) 
         onClose(); // 현재 모달 닫기
         openModal(({ onClose }) => <EnterModal onClose={onClose} />);
       } else if (response.code === 'BUSINESS_4008') {
-        console.log('사업자명 중복');
-        setIsError('중복된 사업자명입니다');
+        console.log('닉네임 중복');
+        setIsError('중복된 닉네임입니다');
       } else {
         console.log('알 수 없는 응답 코드:', response.code);
         setIsError('회원가입 중 오류가 발생했습니다.');
@@ -102,8 +102,8 @@ const BusinessSignupModal: React.FC<ModalProps> = ({ onClose, businessNumber }) 
           const errorCode = error.response.data?.code;
 
           if (errorCode === 'BUSINESS_4008') {
-            console.log('사업자명 중복');
-            setIsError('중복된 사업자명입니다');
+            console.log('닉네임 중복');
+            setIsError('중복된 닉네임입니다');
           } else {
             setIsError(error.response.data?.message || '잘못된 요청입니다.');
           }
@@ -181,16 +181,16 @@ const BusinessSignupModal: React.FC<ModalProps> = ({ onClose, businessNumber }) 
         )}
 
         <Box>
-          <Name>사업자명</Name>
+          <Name>닉네임</Name>
           <Error>{isError}</Error>
         </Box>
         <Input
           isError={!!isError}
-          value={businessName}
-          onChange={handleChangeBusinessName}
-          placeholder="사업자명을 입력하세요. (한글 및 영어 2~10자)"
+          value={nickname}
+          onChange={handleChangeNickname}
+          placeholder="닉네임을 입력하세요. (한글 및 영어 2~10자)"
         />
-        <Button disabled={!businessName} onClick={handleOpenNextModal}>
+        <Button disabled={!nickname} onClick={handleOpenNextModal}>
           회원가입
         </Button>
       </Container>
