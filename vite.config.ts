@@ -1,10 +1,23 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react-swc';
 import svgr from '@svgr/rollup';
+import { nodePolyfills } from 'vite-plugin-node-polyfills';
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), svgr()],
+  plugins: [
+    react(),
+    svgr(),
+    nodePolyfills({
+      // crypto와 buffer를 포함한 Node.js 전역 및 내장 모듈에 대한 폴리필을 주입합니다.
+      protocolImports: true,
+    }),
+  ],
+  define: {
+    // Wepin SDK와 같은 일부 라이브러리는 'global' 객체를 사용하므로,
+    // 브라우저의 'globalThis'를 'global'로 정의해줍니다.
+    global: 'globalThis',
+  },
   build: {
     rollupOptions: {
       output: {
@@ -13,10 +26,10 @@ export default defineConfig({
           svgAssets: [
             './src/assets/homePage/promotion1.svg',
             './src/assets/homePage/promotion2.svg',
-            './src/assets/homePage/promotion3.svg'
-          ]
-        }
-      }
+            './src/assets/homePage/promotion3.svg',
+          ],
+        },
+      },
     },
     // 빌드 최적화 설정
     chunkSizeWarningLimit: 2000, // 청크 크기 경고 임계값 증가
@@ -26,8 +39,8 @@ export default defineConfig({
     exclude: [
       './src/assets/homePage/promotion1.svg',
       './src/assets/homePage/promotion2.svg',
-      './src/assets/homePage/promotion3.svg'
-    ]
+      './src/assets/homePage/promotion3.svg',
+    ],
   },
   server: {
     proxy: {
@@ -41,7 +54,7 @@ export default defineConfig({
             proxyReq.setHeader('X-Forwarded-Host', req.headers.host);
             proxyReq.setHeader('X-Forwarded-Proto', 'https');
           });
-        }
+        },
       },
     },
   },

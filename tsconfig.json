@@ -18,7 +18,6 @@
   },
   "include": [
     "src",
-    "custom.d.ts",
     "svg.d.ts",
     "store/authStore.tsx",
     "store/authService.tsx"

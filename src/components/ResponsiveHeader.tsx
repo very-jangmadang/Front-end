@@ -45,7 +45,6 @@ const ResponsiveHeader = () => {
       isAuthenticated ? '/api/member/search' : '/api/permit/search',
     );
 
-    console.log('recentSearch:', data.result.recentSearch);
     setHotKeywords(data.result.popularSearch);
     setRecentKeywords(data.result.recentSearch);
   };

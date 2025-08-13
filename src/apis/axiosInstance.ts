@@ -42,16 +42,6 @@ axiosInstance.interceptors.request.use(
       // config.headers['X-Client-Origin'] = window.location.origin;
     }
 
-    console.log('API 요청:', {
-      method: config.method,
-      url: config.url,
-      baseURL: config.baseURL,
-      fullURL: `${config.baseURL}${config.url}`,
-      withCredentials: config.withCredentials,
-      headers: config.headers,
-      data: config.data,
-      cookies: document.cookie,
-    });
     return config;
   },
   (error) => {
@@ -63,13 +53,6 @@ axiosInstance.interceptors.request.use(
 // 응답 인터셉터 추가
 axiosInstance.interceptors.response.use(
   (response) => {
-    console.log('API 응답:', {
-      status: response.status,
-      url: response.config.url,
-      data: response.data,
-      responseHeaders: response.headers,
-      cookiesAfterResponse: document.cookie,
-    });
     return response;
   },
   (error) => {

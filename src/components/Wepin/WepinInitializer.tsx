@@ -22,9 +22,6 @@ const WepinInitializer = () => {
       // 로컬 개발 환경에서는 .env.local 파일의 테스트 토큰을 우선적으로 사용합니다.
       if (import.meta.env.DEV) {
         idToken = import.meta.env.VITE_WEPIN_TEST_ID_TOKEN || null;
-        if (idToken) {
-          console.warn('Local Dev: Using test idToken from .env.local');
-        }
       }
 
       // 테스트 토큰이 없거나 운영 환경일 경우 쿠키에서 가져옵니다.
@@ -49,6 +46,12 @@ const WepinInitializer = () => {
             token: idToken,
           });
 
+          if (loginResult.error || !loginResult.token) {
+            console.error('Wepin 로그인 실패:', loginResult.error);
+            // 'required/register_email' 같은 특정 에러 처리 로직 추가 가능
+            return;
+          }
+
           console.log('Wepin Login 성공. Wepin SDK를 초기화합니다.');
 
           // 2. @wepin/sdk-js를 Wepin의 토큰으로 초기화
@@ -62,7 +65,7 @@ const WepinInitializer = () => {
             refreshToken: loginResult.token.refreshToken,
           });
 
-          console.log('Wepin SDK 인증 완료.');
+          // console.log('Wepin SDK 인증 완료.');
           setWepin(wepinSDK); // 인증된 SDK 인스턴스를 Context에 저장
         } catch (error) {
           console.error('Wepin SDK 초기화 또는 로그인에 실패했습니다:', error);

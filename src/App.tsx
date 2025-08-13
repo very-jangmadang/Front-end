@@ -2,7 +2,7 @@ import { ModalContextProvider } from './components/Modal/context/ModalContext';
 import Router from './routes/router';
 import { AuthProvider } from './context/AuthProvider';
 import GlobalStyle from './styles/globalStyle';
-import { useEffect } from 'react';
+import WepinInitializer from './components/Wepin/WepinInitializer';
 import { WepinProvider } from './context/WepinContext';
 
 function App() {
@@ -11,6 +11,7 @@ function App() {
       <GlobalStyle />
       <AuthProvider>
         <WepinProvider>
+          <WepinInitializer />
           <ModalContextProvider>
             <Router />
           </ModalContextProvider>
