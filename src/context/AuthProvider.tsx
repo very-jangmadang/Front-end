@@ -185,11 +185,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       console.log('=== AuthProvider: /api/permit/me API 응답 ===', response.data);
       
-      if (response.data.isSuccess) {
-        console.log('=== AuthProvider: 사업자 계정입니다 ===');
-        setIsBusiness(true);
+      if (response.data.isSuccess && response.data.result) {
+        // result.business 값이 명시적으로 true인 경우에만 사업자로 설정
+        if (response.data.result.business === true) {
+          console.log('=== AuthProvider: 사업자 계정입니다 (business: true) ===');
+          setIsBusiness(true);
+        } else {
+          console.log('=== AuthProvider: 일반 사용자 계정입니다 (business: false) ===');
+          setIsBusiness(false);
+        }
       } else {
-        console.log('=== AuthProvider: 일반 사용자 계정입니다 ===');
+        console.log('=== AuthProvider: API 응답 형식 오류 - 일반 사용자로 처리 ===');
         setIsBusiness(false);
       }
     } catch (err) {
