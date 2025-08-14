@@ -38,44 +38,11 @@ const ResponsiveHeader = () => {
   const categoryRef = useRef<HTMLDivElement>(null);
   const [hotKeywords, setHotKeywords] = useState<string[]>([]);
   const [recentKeywords, setRecentKeywords] = useState<string[]>([]);
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, logout, isBusiness, isInitialized } = useAuth();
   const isSearchCompleted = useIsSearchCompleted((v) => v.isSearchCompleted);
   const [searchClicked, setSearchClicked] = useState<boolean>(false);
-  const [isBusiness, setIsBusiness] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // 사업자 여부 확인
-  useEffect(() => {
-    const checkBusinessStatus = async () => {
-      try {
-        setIsLoading(true);
-        const response = await axiosInstance.get('/api/permit/me', {
-          withCredentials: true,
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
-          }
-        });
-        
-        console.log('=== ResponsiveHeader: /api/permit/me API 응답 ===', response.data);
-        
-        if (response.data.isSuccess) {
-          console.log('=== ResponsiveHeader: 사업자 계정입니다 ===');
-          setIsBusiness(true);
-        } else {
-          console.log('=== ResponsiveHeader: 일반 사용자 계정입니다 ===');
-          setIsBusiness(false);
-        }
-      } catch (err) {
-        console.log('=== ResponsiveHeader: /api/permit/me API 실패 - 일반 사용자로 처리 ===', err);
-        setIsBusiness(false);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkBusinessStatus();
-  }, []);
+  // 전역 상태에서 isBusiness를 가져오므로 별도 API 호출 불필요
 
   const getSearch = async () => {
     const { data }: { data: TSearch } = await axiosInstance.get(
@@ -89,8 +56,7 @@ const ResponsiveHeader = () => {
     await axiosInstance.delete(`/api/member/search?keyword=${keyword}`);
 
   const handleClickLogo = () => {
-    navigate('/');
-    setSearchText('');
+    window.location.reload();
   };
   const handleCategoryOut = (e: MouseEvent) => {
     const currentCategoryRef = categoryRef.current;
@@ -307,7 +273,7 @@ const ResponsiveHeader = () => {
             </IconDiv>
 
                         {/* 비즈니스 계정일 때만 래플 업로드 버튼 표시 */}
-            {!isLoading && isBusiness && (
+            {isInitialized && isBusiness && (
               <IconDiv
                 onClick={() => {
                   if (isAuthenticated) {

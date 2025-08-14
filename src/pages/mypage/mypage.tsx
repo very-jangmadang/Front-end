@@ -7,6 +7,7 @@ import ProfileComponent from '../../components/ProfileComponent';
 import NameEditModal from '../../components/Modal/modals/NameEditModal';
 import axiosInstance from '../../apis/axiosInstance';
 import media from '../../styles/media';
+import { useAuth } from '../../context/AuthContext';
 
 
 interface ProfileData {
@@ -22,41 +23,20 @@ const MyProfilePage: React.FC = () => {
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [isNameEditModalOpen, setIsNameEditModalOpen] = useState(false);
-  const [isBusiness, setIsBusiness] = useState<boolean>(false);
-  const [isBusinessLoading, setIsBusinessLoading] = useState<boolean>(true);
+  const { isAuthenticated, isBusiness, isInitialized, checkBusinessStatus } = useAuth();
 
   const navigate = useNavigate();
 
-  // 사업자 여부 확인
-  const checkBusinessStatus = async () => {
-    try {
-      setIsBusinessLoading(true);
-      const response = await axiosInstance.get('/api/permit/me', {
-        withCredentials: true,
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest'
-        }
-      });
-      
-      console.log('=== MyProfilePage: /api/permit/me API 응답 ===', response.data);
-      
-      if (response.data.isSuccess) {
-        console.log('=== MyProfilePage: 사업자 계정입니다 ===');
-        setIsBusiness(true);
-      } else {
-        console.log('=== MyProfilePage: 일반 사용자 계정입니다 ===');
-        setIsBusiness(false);
-      }
-    } catch (err) {
-      console.log('=== MyProfilePage: /api/permit/me API 실패 - 일반 사용자로 처리 ===', err);
-      setIsBusiness(false);
-    } finally {
-      setIsBusinessLoading(false);
-    }
-  };
+  // 전역 상태에서 isBusiness를 가져오므로 별도 API 호출 불필요
 
   const fetchProfileData = async () => {
+    // 로그인 상태가 확실히 확인된 후에만 API 호출
+    if (isAuthenticated !== true) {
+      console.log('로그인 상태를 확인 중이거나 로그인이 필요합니다.');
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       let endpoint = '/api/member/mypage';
@@ -121,21 +101,49 @@ const MyProfilePage: React.FC = () => {
       } else {
         setProfileData(null);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('API 요청 중 오류 발생:', error);
+      
+      // 로그인되지 않은 경우에만 에러 처리
+      if (error.response?.status === 401 && !isAuthenticated) {
+        console.log('로그인이 필요합니다.');
+        // 로그인 페이지로 리다이렉트하거나 로그인 모달 표시
+        navigate('/');
+        return;
+      }
+      
       setProfileData(null);
     } finally {
       setLoading(false);
     }
   };
 
+  // 마이페이지를 열 때마다 사업자 여부를 최신 상태로 업데이트
   useEffect(() => {
-    checkBusinessStatus();
-  }, []);
+    console.log('=== MyProfilePage: 마이페이지 마운트 - 사업자 여부 재확인 시작 ===');
+    
+    // 인증 상태 초기화가 완료된 후에만 처리
+    if (!isInitialized) {
+      console.log('인증 상태 초기화 중...');
+      return;
+    }
+    
+    if (isAuthenticated === true) {
+      checkBusinessStatus();
+    } else if (isAuthenticated === false) {
+      // 로그인이 확실히 안 된 경우에만 리다이렉트
+      console.log('로그인이 필요합니다.');
+      navigate('/');
+      return;
+    }
+  }, [isAuthenticated, isInitialized, checkBusinessStatus, navigate]);
 
   useEffect(() => {
-    fetchProfileData();
-  }, [selectedToggle]);
+    // 인증 상태 초기화가 완료되고 로그인된 상태에서만 프로필 데이터 가져오기
+    if (isInitialized && isAuthenticated === true) {
+      fetchProfileData();
+    }
+  }, [selectedToggle, isAuthenticated, isInitialized]);
 
     // 토글 옵션 결정
   const getToggleOptions = () => {
@@ -158,7 +166,9 @@ const MyProfilePage: React.FC = () => {
           </SettingsLink>
         </TitleContainer>
 
-        {profileData && (
+        {!isInitialized ? (
+          <LoadingMessage>인증 상태를 확인하는 중...</LoadingMessage>
+        ) : profileData ? (
           <ProfileComponent
             username={profileData.nickname}
             followers={profileData.followerNum}
@@ -166,7 +176,7 @@ const MyProfilePage: React.FC = () => {
             isBusinessUser={isBusiness}
             isUserProfilePage={false} // 마이페이지임을 명시
           />
-        )}
+        ) : null}
 
         <ToggleContainer>
           <ToggleIndicator 

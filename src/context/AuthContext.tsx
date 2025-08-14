@@ -1,9 +1,12 @@
 import { createContext, useContext } from 'react';
 
 export type AuthContextType = {
-  isAuthenticated: boolean;
+  isAuthenticated: boolean | undefined;
+  isBusiness: boolean;
+  isInitialized: boolean;
   login: () => Promise<void>;
   logout: () => void;
+  checkBusinessStatus: () => Promise<void>;
 };
 
 export const AuthContext = createContext<AuthContextType | undefined>(

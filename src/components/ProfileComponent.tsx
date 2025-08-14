@@ -130,20 +130,7 @@ const ProfileComponent: React.FC<ProfileProps> = ({
     <ProfileWrapper>
       <ProfileContent>
         <ProfileImageWrapper>
-          <ProfileImage 
-            src={profileImage} 
-            alt="Profile" 
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.style.display = 'none';
-              target.nextElementSibling?.classList.remove('hidden');
-            }}
-          />
-          {/* 로딩 실패 시 표시할 회색 배경 */}
-          <ProfileImageFallback 
-            className={profileImage !== profileDefault ? 'hidden' : ''}
-          />
-          {/* 마이페이지일 때만 프로필 이미지 편집 가능 */}
+          <ProfileImage src={profileImage} alt="Profile" />
           {!isUserProfilePage && (
             <>
               <EditIcon htmlFor="profile-upload">
@@ -492,24 +479,7 @@ const ProfileImage = styled.img`
   object-fit: cover;
 `;
 
-const ProfileImageFallback = styled.div`
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  background-color: #e0e0e0; /* 회색 배경 */
-  display: none; /* 기본적으로 숨김 */
 
-  &.hidden {
-    display: none;
-  }
-
-  &:not(.hidden) {
-    display: block;
-  }
-`;
 
 const HiddenFileInput = styled.input`
   display: none;
@@ -596,7 +566,6 @@ export {
   ProfileContent,
   ProfileImageWrapper,
   ProfileImage,
-  ProfileImageFallback,
   HiddenFileInput,
   EditIcon,
   UserDetails,
