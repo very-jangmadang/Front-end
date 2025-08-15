@@ -129,6 +129,7 @@ const MyProfilePage: React.FC = () => {
     }
     
     if (isAuthenticated === true) {
+      console.log('=== MyProfilePage: 사업자 여부 재확인 시작 ===');
       checkBusinessStatus();
     } else if (isAuthenticated === false) {
       // 로그인이 확실히 안 된 경우에만 리다이렉트

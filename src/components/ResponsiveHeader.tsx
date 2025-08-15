@@ -56,7 +56,7 @@ const ResponsiveHeader = () => {
     await axiosInstance.delete(`/api/member/search?keyword=${keyword}`);
 
   const handleClickLogo = () => {
-    window.location.reload();
+    navigate('/');
   };
   const handleCategoryOut = (e: MouseEvent) => {
     const currentCategoryRef = categoryRef.current;
@@ -129,6 +129,15 @@ const ResponsiveHeader = () => {
   useEffect(() => {
     // userInfo는 useUserInfo 훅에서 자동으로 가져옴
   }, []);
+
+  // isBusiness 상태 변경 감지 및 로깅
+  useEffect(() => {
+    console.log('=== ResponsiveHeader: isBusiness 상태 변경 ===', {
+      isBusiness,
+      isInitialized,
+      isAuthenticated
+    });
+  }, [isBusiness, isInitialized, isAuthenticated]);
 
   return (
     <>
