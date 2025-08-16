@@ -10,9 +10,10 @@ import { THistory } from '../../apis/chargeType';
 
 interface ModalProps {
   onClose: () => void;
+  txId: string;
 }
 
-const ChargeOkModal: React.FC<ModalProps> = ({ onClose }) => {
+const ChargeOkModal: React.FC<ModalProps> = ({ onClose, txId }) => {
   const { clearModals } = useModalContext();
 
   const {
@@ -37,7 +38,6 @@ const ChargeOkModal: React.FC<ModalProps> = ({ onClose }) => {
     purchaseDate: '',
   };
 
-
   return (
     <Modal onClose={onClose}>
       <Container>
@@ -48,21 +48,21 @@ const ChargeOkModal: React.FC<ModalProps> = ({ onClose }) => {
           <Ticket>{chargeData?.amount}개</Ticket>
         </TicketBox>
         <Option>
-          <Name>거래 날짜</Name>
-          <Name>
-            {new Date(chargeData?.purchaseDate)
-              .toLocaleDateString('ko-KR')
-              .replace(/-/g, '.')}
+          <Name>Tx ID</Name>
+          <Name
+            as="a"
+            href={`https://www.veryscan.io/tx/${txId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {txId.slice(0, 15) + '...' + txId.slice(-4)}
           </Name>
         </Option>
+
         <Line />
         <Option>
           <Sname>구매한 티켓</Sname>
           <Sname>{chargeData?.amount}개</Sname>
-        </Option>
-        <Option>
-          <Name>지불한 금액</Name>
-          <Price>{Number(chargeData?.amount) * 100}원</Price>
         </Option>
         <Option>
           <div></div>

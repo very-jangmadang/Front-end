@@ -7,19 +7,25 @@ import { useModalContext } from '../../../../components/Modal/context/ModalConte
 import ChangeModal from '../modal/ChangeModal';
 import useScreenSize from '../../../../styles/useScreenSize';
 import media from '../../../../styles/media';
-import CircleChecked from '@mui/icons-material/CheckCircleOutline';
-import CircleUnchecked from '@mui/icons-material/RadioButtonUnchecked';
 import Checkbox from '@mui/material/Checkbox';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { GetMyTicket, PostCharge, PostExchange } from '../../apis/chargeAPI';
-import ChargeModal from '../modal/ChargeModal';
+import { GetMyTicket, PostExchange } from '../../apis/chargeAPI';
 import ChargeOkModal from '../modal/ChargeOkModal';
 import ChangeOkModal from '../modal/ChangeOkModal';
 import { useNavigate } from 'react-router-dom';
+import { useWepin } from '../../../../context/WepinContext';
+import { useWepinLogin } from '../../../../hooks/useWepinLogin';
+import CircleChecked from '@mui/icons-material/CheckCircleOutline';
+import CircleUnchecked from '@mui/icons-material/RadioButtonUnchecked';
 
 interface TabTypeProps {
   type: number;
 }
+
+// --- Wepin 트랜잭션 관련 설정 (실제 값으로 변경 필요) ---
+const WEPIN_NETWORK = 'Verychain';
+const SERVICE_WALLET_ADDRESS = '0x789e278621f6359239ede24643ce22ce341bc5ee'; // 서비스의 입금 주소
+const TICKET_PRICE_IN_CRYPTO = 0.1; // 1 티켓 당 전송할 암호화폐 양 (예시)
 
 function TabPage({ type }: TabTypeProps) {
   const [ticket, setTicket] = useState<string>('');
@@ -28,6 +34,8 @@ function TabPage({ type }: TabTypeProps) {
   const { isSmallScreen, isLargeScreen } = useScreenSize();
   const navigate = useNavigate();
 
+  const { wepin } = useWepin();
+  const { handleWepinLogin } = useWepinLogin();
   const {
     data: Tickets,
     isPending,
@@ -41,16 +49,14 @@ function TabPage({ type }: TabTypeProps) {
     console.log(ticket);
   }, [ticket]);
 
-  const { mutate: postMutation } = useMutation({
-    mutationFn: PostCharge,
-    onSuccess: () => {
-      console.log('충전 요청 성공');
+  const handleOpenChargeOkModal = useCallback(
+    (txId: string) => {
+      openModal(({ onClose }) => (
+        <ChargeOkModal txId={txId} onClose={onClose} />
+      ));
     },
-    onError: (error) => {
-      console.log('충전 요청 실패 : ', error);
-    },
-  });
-
+    [openModal],
+  );
   const handleOpenChangeOkModal = useCallback(() => {
     openModal(({ onClose }) => <ChangeOkModal onClose={onClose} />);
   }, [openModal]);
@@ -87,21 +93,61 @@ function TabPage({ type }: TabTypeProps) {
     }
   };
 
-  const handleCharge = () => {
-    if (isLargeScreen) {
-      console.log('충전 모달 열기');
-      openModal(({ onClose }) => (
-        <ChargeModal amount={Number(ticket)} onClose={onClose} />
-      ));
-    } else {
-      if (checked === true) {
-        postMutation({
-          itemId: '티켓',
-          itemName: '테스트상품',
-          totalAmount: Number(ticket) * 100,
-        });
-      }
+  // 인증된 Wepin SDK 인스턴스를 가져오는 헬퍼 함수
+  const getAuthenticatedWepin = async () => {
+    if (wepin) {
+      return wepin;
+    }
+    console.log('Wepin 로그인이 필요하여 로그인 위젯을 엽니다.');
+    return handleWepinLogin();
+  };
+
+  const handleCharge = async () => {
+    if (!ticket || Number(ticket) <= 0) {
+      alert('충전할 티켓 수량을 입력해주세요.');
       return;
+    }
+
+    const sdk = await getAuthenticatedWepin();
+
+    if (!sdk) {
+      console.log('Wepin 로그인이 완료되지 않았습니다.');
+      return;
+    }
+
+    // 3. Wepin SDK를 사용하여 트랜잭션을 실행합니다.
+    try {
+      console.log(`계정정보 가져오기`);
+      const accounts = await sdk.getAccounts();
+
+      if (!accounts || accounts.length === 0) {
+        alert(
+          `Wepin 지갑에서 ${WEPIN_NETWORK} 계정을 찾을 수 없습니다. Wepin 지갑을 열어 계정을 확인해주세요.`,
+        );
+        await sdk.openWidget(); // 사용자가 확인할 수 있도록 지갑을 열어줌
+        return;
+      }
+
+      const userAccount = accounts[0]; // 첫 번째 계정을 사용
+      const amountToSend = (Number(ticket) * TICKET_PRICE_IN_CRYPTO).toString();
+
+      console.log('트랜잭션 전송을 시작합니다...');
+      // `send` 메서드는 사용자에게 PIN 입력 등 확인을 요청하는 위젯을 띄웁니다.
+      const result = await sdk.send({
+        // userAccount는 이미 주소와 네트워크 정보를 포함한 Account 객체입니다.
+        account: userAccount,
+        txData: {
+          toAddress: SERVICE_WALLET_ADDRESS,
+          amount: amountToSend,
+        },
+      });
+
+      console.log('트랜잭션 성공! TxID:', result.txId);
+      // 성공 모달을 띄웁니다.
+      handleOpenChargeOkModal(result.txId);
+    } catch (error) {
+      console.error('Wepin 트랜잭션 처리 중 오류 발생:', error);
+      alert('티켓 충전 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
     }
   };
 

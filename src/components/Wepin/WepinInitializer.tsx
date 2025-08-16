@@ -71,18 +71,28 @@ const WepinInitializer = () => {
 
         console.log('Wepin Login 성공. Wepin SDK를 초기화합니다.');
 
-        /* @wepin/sdk-js를 Wepin의 토큰으로 초기화
-        const wepinSDK = new WepinSDK({
+        // 위젯
+        const wepinSdk = new WepinSDK({
           appId: import.meta.env.VITE_WEPIN_APP_ID,
           appKey: import.meta.env.VITE_WEPIN_APP_KEY,
         });
-        await wepinSDK.init({ defaultLanguage: 'ko' });
+        await wepinSdk.init({
+          type: 'hide',
+          defaultLanguage: 'ko',
+          defaultCurrency: 'KRW',
+          loginProviders: ['google'],
+        });
+        if (wepinSdk.isInitialized()) {
+          console.log('wepinSDK is initialized!');
+        }
+        const status = await wepinSdk.getStatus();
+        console.log('Wepin SDK 상태:', status);
+
         // loginWepin()을 통해 얻은 Wepin 전용 토큰을 사용해야 합니다.
-        await wepinSDK.setToken(userInfo.token);
+        await wepinSdk.setToken(userInfo.token);
 
         console.log('Wepin SDK 인증 완료.');
-        setWepin(wepinSDK); // 인증된 SDK 인스턴스를 Context에 저장
-        */
+        setWepin(wepinSdk); // 인증된 SDK 인스턴스를 Context에 저장
       } catch (error) {
         if (axios.isAxiosError(error) && error.response) {
           console.log(
