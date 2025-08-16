@@ -24,6 +24,8 @@ import axiosInstance from '../apis/axiosInstance';
 import { TSearch } from '../types/searchKeywords';
 import { useAuth } from '../context/AuthContext';
 import { useIsSearchCompleted } from '../store/store';
+import { useWepin } from '../context/WepinContext';
+import { useWepinLogin } from '../hooks/useWepinLogin';
 import { SyncOutlined, WysiwygOutlined } from '@mui/icons-material';
 
 const ResponsiveHeader = () => {
@@ -41,11 +43,13 @@ const ResponsiveHeader = () => {
   const isSearchCompleted = useIsSearchCompleted((v) => v.isSearchCompleted);
   const [searchClicked, setSearchClicked] = useState<boolean>(false);
   const [isBusinessUser, setIsBusinessUser] = useState<boolean>(false);
+  const { wepin } = useWepin();
+  const { handleWepinLogin } = useWepinLogin();
 
   // 사용자의 비즈니스 상태 확인
   const checkBusinessStatus = async () => {
     if (!isAuthenticated) return;
-    
+
     try {
       const response = await axiosInstance.get('/api/member/mypage');
       if (response.data.isSuccess && response.data.result) {
@@ -122,6 +126,21 @@ const ResponsiveHeader = () => {
     else logout();
   };
 
+  const handleOpenWallet = async () => {
+    // `wepin` 객체가 있으면 사용자가 Wepin에 로그인된 상태입니다.
+    if (wepin) {
+      try {
+        // `openWidget`을 호출하면 사용자의 자산 정보가 담긴 위젯이 열립니다.
+        await wepin.openWidget();
+      } catch (error) {
+        console.error('Wepin 위젯을 여는 데 실패했습니다:', error);
+      }
+    } else {
+      // 혹시 모를 예외 상황: wepin 객체는 없는데 앱 로그인은 되어있는 경우
+      alert('Wepin 지갑을 보려면 Wepin 로그인이 필요합니다.');
+    }
+  };
+
   // 시작하자마자 호출될 API
   useEffect(() => {
     getSearch();
@@ -153,9 +172,9 @@ const ResponsiveHeader = () => {
     <>
       <Wrapper>
         <TopContainer>
-          <WepinLogoLink href="https://www.wepin.io/ko" target="_blank" rel="noopener noreferrer">
+          <WepinLogoContainer onClick={handleWepinLogin}>
             <WepinLogo src={wepinLogo} alt="Wepin" />
-          </WepinLogoLink>
+          </WepinLogoContainer>
           <LoginBtn onClick={onClickLoginBtn} state={String(isAuthenticated)}>
             {isAuthenticated ? '로그아웃' : '로그인'}
           </LoginBtn>
@@ -281,7 +300,7 @@ const ResponsiveHeader = () => {
             <IconDiv
               onClick={() => {
                 if (isAuthenticated) {
-                  navigate('/change'); // 충전/환전
+                  navigate('/change');
                 } else {
                   handleOpenModal();
                 }
@@ -710,10 +729,11 @@ const Line = styled.div`
   `}
 `;
 
-const WepinLogoLink = styled.a`
+const WepinLogoContainer = styled.div`
   text-decoration: none;
   margin-right: 20px;
   margin-top: 5px;
+  cursor: pointer;
   ${media.small`
     margin-right: 10px;
   `}
