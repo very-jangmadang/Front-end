@@ -39,28 +39,13 @@ const ResponsiveHeader = () => {
   const categoryRef = useRef<HTMLDivElement>(null);
   const [hotKeywords, setHotKeywords] = useState<string[]>([]);
   const [recentKeywords, setRecentKeywords] = useState<string[]>([]);
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, logout, isBusiness, isInitialized } = useAuth();
   const isSearchCompleted = useIsSearchCompleted((v) => v.isSearchCompleted);
   const [searchClicked, setSearchClicked] = useState<boolean>(false);
-  const [isBusinessUser, setIsBusinessUser] = useState<boolean>(false);
   const { wepin } = useWepin();
   const { handleWepinLogin } = useWepinLogin();
 
-  // 사용자의 비즈니스 상태 확인
-  const checkBusinessStatus = async () => {
-    if (!isAuthenticated) return;
-
-    try {
-      const response = await axiosInstance.get('/api/member/mypage');
-      if (response.data.isSuccess && response.data.result) {
-        // API 응답에 is_business 필드가 있다고 가정
-        setIsBusinessUser(response.data.result.is_business || false);
-      }
-    } catch (error) {
-      console.error('비즈니스 상태 확인 실패:', error);
-      setIsBusinessUser(false);
-    }
-  };
+  // 전역 상태에서 isBusiness를 가져오므로 별도 API 호출 불필요
 
   const getSearch = async () => {
     const { data }: { data: TSearch } = await axiosInstance.get(
@@ -75,7 +60,6 @@ const ResponsiveHeader = () => {
 
   const handleClickLogo = () => {
     navigate('/');
-    setSearchText('');
   };
   const handleCategoryOut = (e: MouseEvent) => {
     const currentCategoryRef = categoryRef.current;
@@ -161,12 +145,17 @@ const ResponsiveHeader = () => {
   }, [searchRef.current, categoryRef.current]);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      checkBusinessStatus();
-    } else {
-      setIsBusinessUser(false);
-    }
-  }, [isAuthenticated]);
+    // userInfo는 useUserInfo 훅에서 자동으로 가져옴
+  }, []);
+
+  // isBusiness 상태 변경 감지 및 로깅
+  useEffect(() => {
+    console.log('=== ResponsiveHeader: isBusiness 상태 변경 ===', {
+      isBusiness,
+      isInitialized,
+      isAuthenticated,
+    });
+  }, [isBusiness, isInitialized, isAuthenticated]);
 
   return (
     <>
@@ -311,7 +300,7 @@ const ResponsiveHeader = () => {
             </IconDiv>
 
             {/* 비즈니스 계정일 때만 래플 업로드 버튼 표시 */}
-            {isBusinessUser && (
+            {isInitialized && isBusiness && (
               <IconDiv
                 onClick={() => {
                   if (isAuthenticated) {

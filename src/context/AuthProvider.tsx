@@ -5,8 +5,10 @@ import axiosInstance from '../apis/axiosInstance';
 const MAX_RETRIES = 1; // 재시도 횟수를 제한 (예: 1번)
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | undefined>(undefined);
+  const [isBusiness, setIsBusiness] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // 로그인 함수
   const login = async (retryCount = 0) => {
@@ -64,6 +66,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setIsAuthenticated(false);
       }
     }
+    
+    // 상태 업데이트가 완료될 때까지 잠시 대기
+    await new Promise(resolve => setTimeout(resolve, 100));
   };
 
   // 로그아웃 함수 (CORS 에러 방지)
@@ -166,19 +171,82 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // 사업자 여부 확인 함수
+  const checkBusinessStatus = async () => {
+    try {
+      console.log('=== AuthProvider: /api/permit/me API 호출 시작 ===');
+      const response = await axiosInstance.get('/api/permit/me', {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      });
+      
+      console.log('=== AuthProvider: /api/permit/me API 응답 ===', response.data);
+      
+      if (response.data.isSuccess && response.data.result) {
+        // result.business 값이 명시적으로 true인 경우에만 사업자로 설정
+        if (response.data.result.business === true) {
+          console.log('=== AuthProvider: 사업자 계정입니다 (business: true) ===');
+          setIsBusiness(true);
+        } else {
+          console.log('=== AuthProvider: 일반 사용자 계정입니다 (business: false) ===');
+          setIsBusiness(false);
+        }
+      } else {
+        console.log('=== AuthProvider: API 응답 형식 오류 - 일반 사용자로 처리 ===');
+        setIsBusiness(false);
+      }
+    } catch (err) {
+      console.log('=== AuthProvider: /api/permit/me API 실패 - 일반 사용자로 처리 ===', err);
+      setIsBusiness(false);
+    }
+  };
+
   // 앱 로드 시 로그인 상태 체크
   useEffect(() => {
-    login();
+    const initializeAuth = async () => {
+      try {
+        await login();
+        // login 함수가 완전히 완료된 후에만 초기화 완료로 설정
+        console.log('=== AuthProvider: 인증 초기화 완료 ===');
+        // 상태 업데이트가 완료될 때까지 추가 대기
+        await new Promise(resolve => setTimeout(resolve, 200));
+        setIsInitialized(true);
+      } catch (error) {
+        console.error('=== AuthProvider: 인증 초기화 실패 ===', error);
+        // 에러가 발생해도 초기화는 완료로 설정 (무한 대기 방지)
+        setIsInitialized(true);
+      }
+    };
+    initializeAuth();
   }, []);
+
+  // 로그인 상태가 변경될 때마다 사업자 여부도 확인
+  useEffect(() => {
+    if (isAuthenticated) {
+      checkBusinessStatus();
+    } else {
+      setIsBusiness(false);
+    }
+  }, [isAuthenticated]);
 
   useEffect(() => {
     console.log('isAuthenticated 변경됨:', isAuthenticated);
   }, [isAuthenticated]);
 
+  useEffect(() => {
+    console.log('isBusiness 변경됨:', isBusiness);
+  }, [isBusiness]);
+
   const value: AuthContextType = {
     isAuthenticated,
+    isBusiness,
+    isInitialized,
     login,
     logout,
+    checkBusinessStatus,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

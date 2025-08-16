@@ -50,7 +50,7 @@ const BusinessNumberModal: React.FC<ModalProps> = ({ onClose }) => {
 
     try {
       // 사업자등록번호 검증 API 호출 (isBusiness: true와 함께)
-      const response = await axiosInstance.post('/api/permit/verify-business', {
+      const response = await axiosInstance.post('/api/permit/business', {
         businessCode,
         isBusiness: true,
       }, {
@@ -61,10 +61,10 @@ const BusinessNumberModal: React.FC<ModalProps> = ({ onClose }) => {
         }
       });
 
-      if (response.data.code === 'COMMON_200') {
+      if (response.data.isSuccess) {
         console.log('사업자등록번호 검증 성공 - BusinessSignupModal 열기');
         onClose(); // 현재 모달 닫기
-        openModal(({ onClose }) => <BusinessSignupModal onClose={onClose} businessCode={businessCode} />);
+        openModal(({ onClose }) => <BusinessSignupModal onClose={onClose} />);
       } else {
         console.log('사업자등록번호 검증 실패:', response.data.message);
         // 에러 처리 로직 추가 가능
@@ -72,6 +72,7 @@ const BusinessNumberModal: React.FC<ModalProps> = ({ onClose }) => {
     } catch (error) {
       console.error('사업자등록번호 검증 요청 실패:', error);
       // 에러 처리 로직 추가 가능
+      return;
     }
   };
 
