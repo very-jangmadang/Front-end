@@ -23,9 +23,9 @@ interface TabTypeProps {
 }
 
 // --- Wepin 트랜잭션 관련 설정 (실제 값으로 변경 필요) ---
-const WEPIN_NETWORK = 'ethereum-sepolia'; // 사용할 네트워크 (예: 'ethereum-sepolia', 'klaytn-baobab')
-const SERVICE_WALLET_ADDRESS = 'YOUR_SERVICE_WALLET_ADDRESS_HERE'; // 서비스의 입금 주소
-const TICKET_PRICE_IN_CRYPTO = 1; // 1 티켓 당 전송할 암호화폐 양 (예시)
+const WEPIN_NETWORK = 'Verychain';
+const SERVICE_WALLET_ADDRESS = '0x789e278621f6359239ede24643ce22ce341bc5ee'; // 서비스의 입금 주소
+const TICKET_PRICE_IN_CRYPTO = 0.1; // 1 티켓 당 전송할 암호화폐 양 (예시)
 
 function TabPage({ type }: TabTypeProps) {
   const [ticket, setTicket] = useState<string>('');
@@ -93,38 +93,38 @@ function TabPage({ type }: TabTypeProps) {
     }
   };
 
+  // 인증된 Wepin SDK 인스턴스를 가져오는 헬퍼 함수
+  const getAuthenticatedWepin = async () => {
+    if (wepin) {
+      return wepin;
+    }
+    console.log('Wepin 로그인이 필요하여 로그인 위젯을 엽니다.');
+    return handleWepinLogin();
+  };
+
   const handleCharge = async () => {
     if (!ticket || Number(ticket) <= 0) {
       alert('충전할 티켓 수량을 입력해주세요.');
       return;
     }
 
-    let currentWepin = wepin;
+    const sdk = await getAuthenticatedWepin();
 
-    // 1. Wepin 로그인이 되어있지 않으면 로그인 위젯을 엽니다.
-    if (!currentWepin) {
-      console.log('Wepin 로그인이 필요하여 로그인 위젯을 엽니다.');
-      currentWepin = await handleWepinLogin();
-    }
-
-    // 2. 로그인에 실패했거나 사용자가 취소한 경우, 함수를 종료합니다.
-    if (!currentWepin) {
+    if (!sdk) {
       console.log('Wepin 로그인이 완료되지 않았습니다.');
       return;
     }
 
     // 3. Wepin SDK를 사용하여 트랜잭션을 실행합니다.
     try {
-      console.log(`${WEPIN_NETWORK} 네트워크에서 계정 정보를 가져옵니다...`);
-      const accounts = await currentWepin.getAccounts({
-        networks: [WEPIN_NETWORK],
-      });
+      console.log(`계정정보 가져오기`);
+      const accounts = await sdk.getAccounts();
 
       if (!accounts || accounts.length === 0) {
         alert(
           `Wepin 지갑에서 ${WEPIN_NETWORK} 계정을 찾을 수 없습니다. Wepin 지갑을 열어 계정을 확인해주세요.`,
         );
-        await currentWepin.openWidget(); // 사용자가 확인할 수 있도록 지갑을 열어줌
+        await sdk.openWidget(); // 사용자가 확인할 수 있도록 지갑을 열어줌
         return;
       }
 
@@ -133,7 +133,8 @@ function TabPage({ type }: TabTypeProps) {
 
       console.log('트랜잭션 전송을 시작합니다...');
       // `send` 메서드는 사용자에게 PIN 입력 등 확인을 요청하는 위젯을 띄웁니다.
-      const result = await currentWepin.send({
+      const result = await sdk.send({
+        // userAccount는 이미 주소와 네트워크 정보를 포함한 Account 객체입니다.
         account: userAccount,
         txData: {
           toAddress: SERVICE_WALLET_ADDRESS,
