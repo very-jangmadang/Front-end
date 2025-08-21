@@ -17,6 +17,7 @@ import { useWepin } from '../../../../context/WepinContext';
 import { useWepinLogin } from '../../../../hooks/useWepinLogin';
 import CircleChecked from '@mui/icons-material/CheckCircleOutline';
 import CircleUnchecked from '@mui/icons-material/RadioButtonUnchecked';
+import axiosInstance from '../../../../apis/axiosInstance';
 
 interface TabTypeProps {
   type: number;
@@ -141,7 +142,14 @@ function TabPage({ type }: TabTypeProps) {
           amount: amountToSend,
         },
       });
-
+      try {
+        const response = await axiosInstance.post('/api/member/tickets/vary', {
+          txid: result.txId,
+        });
+        console.log('API 응답:', response.data);
+      } catch (e) {
+        console.error('API 요청 오류:', e);
+      }
       console.log('트랜잭션 성공! TxID:', result.txId);
       // 성공 모달을 띄웁니다.
       handleOpenChargeOkModal(result.txId);
