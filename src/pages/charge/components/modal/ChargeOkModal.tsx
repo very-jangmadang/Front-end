@@ -32,10 +32,12 @@ const ChargeOkModal: React.FC<ModalProps> = ({ onClose, txId }) => {
     return <p>에러</p>;
   }
 
+  console.log('모달 오픈, 거래 내역: ', history);
+
   const chargeData: THistory = history?.result?.[0] || {
     amount: 0,
     user_ticket: 0,
-    purchaseDate: '',
+    confirmedAt: '',
   };
 
   return (

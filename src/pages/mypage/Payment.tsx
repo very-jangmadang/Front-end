@@ -1,102 +1,124 @@
-import React, { useState, useEffect } from "react";
-import styled from "styled-components";
-import BigTitle from "../../components/BigTitle";
-import SmallTitle from "../../components/SmallTitle";
-import axiosInstance from "../../apis/axiosInstance";
+import React, { useState, useEffect } from 'react';
+import styled from 'styled-components';
+import BigTitle from '../../components/BigTitle';
+import SmallTitle from '../../components/SmallTitle';
+import axiosInstance from '../../apis/axiosInstance';
 
 const Payment: React.FC = () => {
-  const [selectedTab, setSelectedTab] = useState("7d");
+  const [selectedTab, setSelectedTab] = useState('7d');
   const [combinedHistory, setCombinedHistory] = useState<any[]>([]);
-  const [bankName, setBankName] = useState("");
-  const [bankNumber, setBankNumber] = useState("");
+  const [bankName, setBankName] = useState('');
+  const [bankNumber, setBankNumber] = useState('');
   const [loading, setLoading] = useState(false);
 
-    const fetchBankInfo = async () => {
-      try {
-        const response = await axiosInstance.get("/api/member/payment/bankInfo");
+  const fetchBankInfo = async () => {
+    try {
+      const response = await axiosInstance.get('/api/member/payment/bankInfo');
 
-        if (response.data.isSuccess) {
-          const { bankName, bankNumber } = response.data.result;
-          setBankName(bankName || ""); 
-          setBankNumber(bankNumber || ""); 
-        } else {
-          console.warn("계좌 정보 조회 실패:", response.data.message);
+      if (response.data.isSuccess) {
+        const { bankName, bankNumber } = response.data.result;
+        setBankName(bankName || '');
+        setBankNumber(bankNumber || '');
+      } else {
+        console.warn('계좌 정보 조회 실패:', response.data.message);
+      }
+    } catch (error) {
+      console.error('계좌 정보 조회 중 오류 발생:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchBankInfo();
+  }, []);
+
+  const fetchPaymentHistory = async () => {
+    setLoading(true);
+    try {
+      const [chargeRes, exchangeRes] = await Promise.all([
+        axiosInstance.get(
+          `/api/member/payment/history/charge?period=${selectedTab}`,
+        ),
+        axiosInstance.get(
+          `/api/member/payment/history/exchange?period=${selectedTab}`,
+        ),
+      ]);
+
+      let chargeData = chargeRes.data.isSuccess ? chargeRes.data.result : [];
+      console.log('충전 data:', chargeData);
+      let exchangeData = exchangeRes.data.isSuccess
+        ? exchangeRes.data.result
+        : [];
+
+      // ✅ 날짜 + 시간 변환 함수
+      const formatDateTime = (dateString?: string) => {
+        if (!dateString) {
+          return {
+            formattedDate: '-',
+            timestamp: 0,
+          };
         }
-      } catch (error) {
-        console.error("계좌 정보 조회 중 오류 발생:", error); 
-      }
-    };
 
-    useEffect(() => {
-      fetchBankInfo();
-    }, []);
+        // 마이크로초 제거
+        const normalized = dateString.replace(/\.\d+$/, '');
+        const date = new Date(normalized);
 
-    const fetchPaymentHistory = async () => {
-      setLoading(true);
-      try {
-        const [chargeRes, exchangeRes] = await Promise.all([
-          axiosInstance.get(`/api/member/payment/history/charge?period=${selectedTab}`),
-          axiosInstance.get(`/api/member/payment/history/exchange?period=${selectedTab}`),
-        ]);
-    
-        let chargeData = chargeRes.data.isSuccess ? chargeRes.data.result : [];
-        let exchangeData = exchangeRes.data.isSuccess ? exchangeRes.data.result : [];
-    
-        // ✅ 날짜 + 시간 변환 함수
-        const formatDateTime = (dateString: string) => {
-          const date = new Date(dateString);
-          const year = date.getFullYear();
-          const month = String(date.getMonth() + 1).padStart(2, "0");
-          const day = String(date.getDate()).padStart(2, "0");
-          const hours = String(date.getHours()).padStart(2, "0");
-          const minutes = String(date.getMinutes()).padStart(2, "0");
-    
+        if (isNaN(date.getTime())) {
           return {
-            formattedDate: `${year}-${month}-${day} ${hours}시 ${minutes}분`,
-            timestamp: date.getTime(), // ✅ 날짜를 숫자로 변환하여 정렬 기준으로 사용
+            formattedDate: '-',
+            timestamp: 0,
           };
+        }
+
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+
+        return {
+          formattedDate: `${year}-${month}-${day} ${hours}시 ${minutes}분`,
+          timestamp: date.getTime(),
         };
-    
-        // ✅ 충전 데이터 가공
-        chargeData = chargeData.map((item: any) => {
-          const { formattedDate, timestamp } = formatDateTime(item.purchaseDate);
-          return {
-            ...item,
-            date: formattedDate, // ✅ 날짜 + 시간 표시
-            timestamp, // ✅ 정렬을 위한 timestamp 추가
-            type: "충전",
-            amount: item.amount * 100, // ✅ 금액 100배 변환
-            user_ticket: item.amount, // ✅ 충전한 티켓 수량
-          };
-        });
-    
-        // ✅ 환전 데이터 가공
-        exchangeData = exchangeData.map((item: any) => {
-          const { formattedDate, timestamp } = formatDateTime(item.exchangedDate);
-          return {
-            ...item,
-            date: formattedDate, // ✅ 날짜 + 시간 표시
-            timestamp, // ✅ 정렬을 위한 timestamp 추가
-            type: "환전",
-            amount: item.amount * 100, // ✅ 금액 100배 변환
-            user_ticket: item.amount, // ✅ 환전한 티켓 수량
-          };
-        });
-    
-        // ✅ 최신순 정렬 (timestamp 기준으로 내림차순 정렬)
-        const mergedData = [...chargeData, ...exchangeData].sort(
-          (a, b) => b.timestamp - a.timestamp // ✅ 최신순 정렬 유지
-        );
-    
-        setCombinedHistory(mergedData);
-      } catch (error) {
-        console.error("내역 조회 중 오류 발생:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    
+      };
+
+      // ✅ 충전 데이터 가공
+      chargeData = chargeData.map((item: any) => {
+        const { formattedDate, timestamp } = formatDateTime(item.confirmedAt);
+        return {
+          ...item,
+          date: formattedDate, // ✅ 날짜 + 시간 표시
+          timestamp, // ✅ 정렬을 위한 timestamp 추가
+          type: '충전',
+          amount: item.amount * 100, // ✅ 금액 100배 변환
+          user_ticket: item.amount, // ✅ 충전한 티켓 수량
+        };
+      });
+
+      // ✅ 환전 데이터 가공
+      exchangeData = exchangeData.map((item: any) => {
+        const { formattedDate, timestamp } = formatDateTime(item.exchangedDate);
+        return {
+          ...item,
+          date: formattedDate, // ✅ 날짜 + 시간 표시
+          timestamp, // ✅ 정렬을 위한 timestamp 추가
+          type: '환전',
+          amount: item.amount * 100, // ✅ 금액 100배 변환
+          user_ticket: item.amount, // ✅ 환전한 티켓 수량
+        };
+      });
+
+      // ✅ 최신순 정렬 (timestamp 기준으로 내림차순 정렬)
+      const mergedData = [...chargeData, ...exchangeData].sort(
+        (a, b) => b.timestamp - a.timestamp, // ✅ 최신순 정렬 유지
+      );
+
+      setCombinedHistory(mergedData);
+    } catch (error) {
+      console.error('내역 조회 중 오류 발생:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchPaymentHistory();
@@ -105,24 +127,27 @@ const Payment: React.FC = () => {
   /** ✅ 계좌 정보 등록 */
   const handleBankInfoSubmit = async () => {
     if (!bankName || !bankNumber) {
-      alert("은행명과 계좌번호를 입력하세요.");
+      alert('은행명과 계좌번호를 입력하세요.');
       return;
     }
 
     try {
-      const response = await axiosInstance.post("/api/member/payment/bankInfo", {
-        bankName,
-        bankNumber,
-      });
+      const response = await axiosInstance.post(
+        '/api/member/payment/bankInfo',
+        {
+          bankName,
+          bankNumber,
+        },
+      );
 
       if (response.data.isSuccess) {
-        alert("계좌 정보가 등록되었습니다!");
+        alert('계좌 정보가 등록되었습니다!');
       } else {
-        alert(response.data.message || "계좌 정보 등록에 실패했습니다.");
+        alert(response.data.message || '계좌 정보 등록에 실패했습니다.');
       }
     } catch (error) {
-      console.error("계좌 정보 등록 중 오류 발생:", error);
-      alert("서버 오류가 발생했습니다. 다시 시도해주세요.");
+      console.error('계좌 정보 등록 중 오류 발생:', error);
+      alert('서버 오류가 발생했습니다. 다시 시도해주세요.');
     }
   };
 
@@ -152,7 +177,9 @@ const Payment: React.FC = () => {
               onChange={(e) => setBankNumber(e.target.value)}
             />
           </AccountNumberWrapper>
-          <ChangeButton onClick={handleBankInfoSubmit}>계좌 변경하기</ChangeButton>
+          <ChangeButton onClick={handleBankInfoSubmit}>
+            계좌 변경하기
+          </ChangeButton>
         </AccountInfo>
       </Section>
 
@@ -162,13 +189,19 @@ const Payment: React.FC = () => {
 
       <Section2>
         <TabContainer>
-          {["7d", "1m", "3m", "6m"].map((tab) => (
+          {['7d', '1m', '3m', '6m'].map((tab) => (
             <Tab key={tab}>
               <TabInner
                 isActive={selectedTab === tab}
                 onClick={() => setSelectedTab(tab)}
               >
-                {tab === "7d" ? "1주일" : tab === "1m" ? "한 달" : tab === "3m" ? "3개월" : "6개월"}
+                {tab === '7d'
+                  ? '1주일'
+                  : tab === '1m'
+                    ? '한 달'
+                    : tab === '3m'
+                      ? '3개월'
+                      : '6개월'}
               </TabInner>
             </Tab>
           ))}
@@ -195,7 +228,9 @@ const Payment: React.FC = () => {
                       <TableCell>{item.type}</TableCell>
                       <TableCell>{item.date}</TableCell>
                       <TableCell>{item.user_ticket}개</TableCell>
-                      <TableCell>{item.paymentMethod || item.exchangeMethod}</TableCell>
+                      <TableCell>
+                        {item.paymentMethod || item.exchangeMethod}
+                      </TableCell>
                       <TableCell>{item.amount}원</TableCell>
                     </TableRow>
                   ))
@@ -269,7 +304,6 @@ const LoadingMessage = styled.div`
   margin-top: 20px;
 `;
 
-
 const Container = styled.div`
   width: 100%;
   max-width: 1080px;
@@ -300,7 +334,6 @@ const Section2 = styled.div`
   align-items: center;
   width: 100%;
   margin-top: 66px;
-
 `;
 
 const Row = styled.div`
@@ -326,8 +359,6 @@ const AccountText = styled.div`
   font-weight: 400;
   line-height: 30px;
 `;
-
-
 
 const TabContainer = styled.div`
   display: flex;
@@ -355,8 +386,8 @@ const TabInner = styled.button<{ isActive: boolean }>`
   font-family: Pretendard;
   font-size: 20px;
   font-weight: 600;
-  color: ${({ isActive }) => (isActive ? "#c908ff" : "#8f8e94")};
-  background: ${({ isActive }) => (isActive ? "#ffffff" : "#f5f5f5")};
+  color: ${({ isActive }) => (isActive ? '#c908ff' : '#8f8e94')};
+  background: ${({ isActive }) => (isActive ? '#ffffff' : '#f5f5f5')};
   border: none;
   border-radius: 7px;
   cursor: pointer;

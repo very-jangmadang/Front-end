@@ -12,7 +12,7 @@ export type TExchange = {
 };
 
 export type THistory = {
-  purchaseDate: string;
+  confirmedAt: string;
   user_ticket: number;
   amount: number;
 };

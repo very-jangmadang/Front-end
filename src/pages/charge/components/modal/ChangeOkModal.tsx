@@ -46,7 +46,7 @@ const ChangeOkModal: React.FC<ModalProps> = ({ onClose }) => {
         <Option>
           <Name>거래 날짜</Name>
           <Name>
-            {new Date(chargeData?.purchaseDate)
+            {new Date(chargeData?.confirmedAt)
               .toLocaleDateString('ko-KR')
               .replace(/-/g, '.')}
           </Name>
