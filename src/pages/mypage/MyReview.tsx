@@ -14,14 +14,30 @@ const MyReview: React.FC = () => {
   const fetchReviews = async () => {
     setLoading(true);
     try {
-      const { data } = await axiosInstance.get("/api/reviews/myStore");
-      if (data.isSuccess) {
+      const { data } = await axiosInstance.get("/api/member/mypage/review");
+      console.log("리뷰 API 응답:", data);
+      
+      if (data.isSuccess && data.result) {
         setAverageScore(data.result.averageScore || 0);
         setReviewCount(data.result.reviewCount || 0);
         setReviews(data.result.reviews || []);
+      } else {
+        console.error("리뷰 API 응답 형식 오류:", data);
+        setReviews([]);
+        setAverageScore(0);
+        setReviewCount(0);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("리뷰 데이터를 불러오는 중 오류 발생:", error);
+      if (error.response) {
+        console.error("에러 응답:", {
+          status: error.response.status,
+          data: error.response.data
+        });
+      }
+      setReviews([]);
+      setAverageScore(0);
+      setReviewCount(0);
     } finally {
       setLoading(false);
     }

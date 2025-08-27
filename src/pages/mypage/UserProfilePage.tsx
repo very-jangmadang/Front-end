@@ -13,13 +13,14 @@ interface ProfileData {
   profileImageUrl: string | null;
   followStatus: boolean;
   avgScore?: number;
+  isBusiness?: boolean;
   raffles: any[];
   reviews: any[];
 }
 
 const UserProfilePage: React.FC = () => {
   const { userId } = useParams<{ userId: string }>(); 
-  const [selectedToggle, setSelectedToggle] = useState("주최한 래플");
+  const [selectedToggle, setSelectedToggle] = useState("응모한 래플");
   const [profileData, setProfileData] = useState<ProfileData>({
     nickname: "불러오는 중...",
     followerNum: 0,
@@ -27,11 +28,20 @@ const UserProfilePage: React.FC = () => {
     profileImageUrl: null,
     followStatus: false,
     avgScore: 0,
+    isBusiness: false,
     raffles: [],
     reviews: [], 
   });
   const [loading, setLoading] = useState(true);
 
+  // 토글 옵션 결정
+  const getToggleOptions = () => {
+    if (profileData.isBusiness) {
+      return ['주최한 래플', '상점 후기'];
+    } else {
+      return ['응모한 래플', '찜한 래플'];
+    }
+  };
 
   const fetchProfileData = async () => {
     setLoading(true);
@@ -51,6 +61,7 @@ const UserProfilePage: React.FC = () => {
           profileImageUrl: userProfileResponse.data.result.profileImageUrl ?? null,
           followStatus: userProfileResponse.data.result.followStatus ?? false,
           avgScore: userProfileResponse.data.result.avgScore ?? 0,
+          isBusiness: userProfileResponse.data.result.isBusiness ?? false,
           reviews: userProfileResponse.data.result.reviews ?? [], 
         }));
       }
@@ -70,7 +81,16 @@ const UserProfilePage: React.FC = () => {
 
   useEffect(() => {
     fetchProfileData();
-  }, [userId]); 
+  }, [userId]);
+
+  // 사업자 여부가 변경될 때마다 토글 옵션 업데이트
+  useEffect(() => {
+    if (profileData.isBusiness) {
+      setSelectedToggle("주최한 래플");
+    } else {
+      setSelectedToggle("응모한 래플");
+    }
+  }, [profileData.isBusiness]); 
 
   return (
     <Container>
@@ -84,29 +104,26 @@ const UserProfilePage: React.FC = () => {
           reviews={profileData.reviewNum}
           profileImageUrl={profileData.profileImageUrl}
           isUserProfilePage={true}
+          isBusinessUser={profileData.isBusiness}
         />
 
         <ToggleContainer>
           <ToggleIndicator selectedToggle={selectedToggle} />
-          <ToggleOption
-            selectedToggle={selectedToggle}
-            value="주최한 래플"
-            onClick={() => setSelectedToggle("주최한 래플")}
-          >
-            주최한 래플
-          </ToggleOption>
-          <ToggleOption
-            selectedToggle={selectedToggle}
-            value="상점 후기"
-            onClick={() => setSelectedToggle("상점 후기")}
-          >
-            상점 후기
-          </ToggleOption>
+          {getToggleOptions().map((option) => (
+            <ToggleOption
+              key={option}
+              selectedToggle={selectedToggle}
+              value={option}
+              onClick={() => setSelectedToggle(option)}
+            >
+              {option}
+            </ToggleOption>
+          ))}
         </ToggleContainer>
 
         {loading ? (
           <LoadingMessage>불러오는 중...</LoadingMessage>
-        ) : selectedToggle === "주최한 래플" ? (
+        ) : selectedToggle === "주최한 래플" || selectedToggle === "응모한 래플" ? (
           profileData.raffles.length > 0 ? (
             <ProductGrid>
               {profileData.raffles.map((product) => (
@@ -120,24 +137,31 @@ const UserProfilePage: React.FC = () => {
                   timeUntilEnd={Number(product.timeUntilEnd) || 0}
                   finish={product.finished}
                   like={product.liked}
+                  raffleStatus={product.raffleStatus || "ACTIVE"}
                 />
               ))}
             </ProductGrid>
           ) : (
-            <NoProductsMessage>주최한 래플이 없습니다.</NoProductsMessage>
+            <NoProductsMessage>
+              {selectedToggle === "주최한 래플" ? "주최한 래플이 없습니다." : "응모한 래플이 없습니다."}
+            </NoProductsMessage>
           )
-        ) : profileData.reviews.length > 0 ? (
-          <ReviewList>
-            {profileData.reviews.map((review) => (
-              <ReviewItem key={review.reviewId}>
-                <p>{review.text}</p>
-                <span>평점: {review.score}/5</span>
-              </ReviewItem>
-            ))}
-          </ReviewList>
-        ) : (
-          <NoProductsMessage>상점 후기가 없습니다.</NoProductsMessage>
-        )}
+        ) : selectedToggle === "상점 후기" ? (
+          profileData.reviews.length > 0 ? (
+            <ReviewList>
+              {profileData.reviews.map((review) => (
+                <ReviewItem key={review.reviewId}>
+                  <p>{review.text}</p>
+                  <span>평점: {review.score}/5</span>
+                </ReviewItem>
+              ))}
+            </ReviewList>
+          ) : (
+            <NoProductsMessage>상점 후기가 없습니다.</NoProductsMessage>
+          )
+        ) : selectedToggle === "찜한 래플" ? (
+          <NoProductsMessage>찜한 래플이 없습니다.</NoProductsMessage>
+        ) : null}
       </InnerContainer>
     </Container>
   );
@@ -172,45 +196,42 @@ const InnerContainer = styled.div`
 
 const ToggleContainer = styled.div`
   position: relative;
-  width: 100%;
-  max-width: 500px; /* ✅ 최대 너비 설정 */
-  height: 58px; /* ✅ 높이 고정 */
+  width: 946px;
+  height: 58px;
+  flex-shrink: 0;
   border-radius: 50px;
   background: #f5f5f5;
-  margin: 45px auto 45px; /* ✅ 바닥 여백(아래 마진)을 45px 고정 */
+  margin: 45px auto 76px;
   display: flex;
   align-items: center;
   cursor: pointer;
 
-  @media (max-width: 768px) {
-    max-width: 400px;
+  @media (max-width: 1024px) {
+    width: 100%;
+    max-width: 946px;
   }
 
-  
-  @media (max-width: 480px) {
-    max-width: 300px;
+  @media (max-width: 768px) {
+    width: 100%;
+    max-width: 500px;
   }
 `;
 
 const ToggleIndicator = styled.div<{ selectedToggle: string }>`
   position: absolute;
-  width: calc(50% - 10px); /* ✅ 너비만 줄어들도록 설정 */
-  height: 100%; /* ✅ 높이 유지 */
+  width: calc(100% / 2);
+  height: 100%;
   background: #c908ff;
   border-radius: 50px;
   top: 0;
-  left: ${({ selectedToggle }) => (selectedToggle === "주최한 래플" ? "5px" : "calc(50% + 5px)")}; 
-  transition: left 0.3s ease, width 0.3s ease;
-
-  @media (max-width: 768px) {
-    width: calc(50% - 8px);
-    left: ${({ selectedToggle }) => (selectedToggle === "주최한 래플" ? "4px" : "calc(50% + 4px)")};
-  }
-
-  @media (max-width: 480px) {
-    width: calc(50% - 6px);
-    left: ${({ selectedToggle }) => (selectedToggle === "주최한 래플" ? "3px" : "calc(50% + 3px)")};
-  }
+  transition: left 0.3s ease;
+  left: ${({ selectedToggle }) => {
+    if (selectedToggle === "주최한 래플" || selectedToggle === "응모한 래플") {
+      return "0";
+    } else {
+      return "calc(100% / 2)";
+    }
+  }};
 `;
 
 const ToggleOption = styled.div<{ selectedToggle: string; value: string }>`
@@ -219,21 +240,13 @@ const ToggleOption = styled.div<{ selectedToggle: string; value: string }>`
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 20px; /* ✅ 글자 크기 고정 */
-  height: 100%; /* ✅ 높이 유지 */
+  font-size: 16px;
+  height: 100%;
   cursor: pointer;
   position: relative;
   z-index: 2;
   color: ${({ selectedToggle, value }) => (selectedToggle === value ? "#fff" : "#c908ff")};
   transition: color 0.3s ease;
-
-  @media (max-width: 768px) {
-    font-size: 20px; /* ✅ 768px 이하에서도 글자 크기 유지 */
-  }
-
-  @media (max-width: 480px) {
-    font-size: 20px; /* ✅ 480px 이하에서도 글자 크기 유지 */
-  }
 `;
 
 

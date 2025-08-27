@@ -192,7 +192,7 @@ const ProfileComponent: React.FC<ProfileProps> = ({
               <StyledButton onClick={() => navigate("/mypage/following-list")}>
                 팔로잉 목록
               </StyledButton>
-              <StyledButton onClick={() => navigate("/mypage/reviews")}>
+              <StyledButton onClick={() => navigate("/mypage/my-review")}>
                 상점 후기
               </StyledButton>
             </BusinessButtonContainer>

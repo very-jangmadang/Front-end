@@ -4,12 +4,16 @@ import StarIcon from "../assets/mypages/Star.svg";
 import GrayStarIcon from "../assets/mypages/Graystar.svg";
 
 interface Review {
-  id: number;
-  username: string;
-  rating: number;
-  product: string;
-  reviewText: string;
-  images: string[];
+  reviewId: number;
+  userId: number;
+  raffleId: number;
+  raffleName: string;
+  profileImageUrl: string;
+  reviewerId: number;
+  score: number;
+  text: string;
+  imageUrls: string[];
+  timestamp: string;
 }
 
 interface ReviewComponentProps {
@@ -37,25 +41,30 @@ const ReviewComponent: React.FC<ReviewComponentProps> = ({
       </AverageRatingBox>
 
       {reviews.map((review) => (
-        <ReviewCard key={review.id}>
+        <ReviewCard key={review.reviewId}>
           <UserSection>
-            <ProfileImage />
-            <Username>{review.username}</Username>
+            <ProfileImage src={review.profileImageUrl || ''} alt="프로필 이미지" />
+            <Username>사용자 {review.reviewerId}</Username>
             <StarRow>
               {Array.from({ length: 5 }).map((_, index) => (
-                <Star key={index} src={index < review.rating ? StarIcon : GrayStarIcon} />
+                <Star key={index} src={index < review.score ? StarIcon : GrayStarIcon} />
               ))}
             </StarRow>
           </UserSection>
 
           <ReviewContent>
-            <ProductName>{review.product}</ProductName>
+            <ProductName>{review.raffleName}</ProductName>
             <ImageContainer>
-              {review.images.map((image, index) => (
-                <ReviewImage key={index} src={image} alt={`Review ${index + 1}`} />
-              ))}
+              {review.imageUrls && review.imageUrls.length > 0 ? (
+                review.imageUrls.map((image, index) => (
+                  <ReviewImage key={index} src={image} alt={`Review ${index + 1}`} />
+                ))
+              ) : (
+                <NoImageMessage>이미지 없음</NoImageMessage>
+              )}
             </ImageContainer>
-            <ReviewText>{review.reviewText}</ReviewText>
+            <ReviewText>{review.text}</ReviewText>
+            <Timestamp>{new Date(review.timestamp).toLocaleDateString('ko-KR')}</Timestamp>
           </ReviewContent>
         </ReviewCard>
       ))}
@@ -189,6 +198,22 @@ const ReviewText = styled.div`
   font-size: 16px;
   font-weight: 400;
   line-height: 150%;
+`;
+
+const Timestamp = styled.div`
+  font-size: 14px;
+  color: #8f8e94;
+  margin-top: 8px;
+`;
+
+const NoImageMessage = styled.div`
+  font-size: 14px;
+  color: #8f8e94;
+  text-align: center;
+  padding: 20px;
+  background: #f5f5f5;
+  border-radius: 5px;
+  width: 100%;
 `;
 
 const NoReviewsMessage = styled.div`
