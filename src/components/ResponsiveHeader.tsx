@@ -161,7 +161,7 @@ const ResponsiveHeader = () => {
     <>
       <Wrapper>
         <TopContainer>
-          <WepinLogoContainer onClick={handleWepinLogin}>
+          <WepinLogoContainer onClick={() => window.open('https://app.wepin.io/dashboard', '_blank')}>
             <WepinLogo src={wepinLogo} alt="Wepin" />
           </WepinLogoContainer>
           <LoginBtn onClick={onClickLoginBtn} state={String(isAuthenticated)}>
