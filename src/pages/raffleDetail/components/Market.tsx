@@ -112,12 +112,32 @@ const Market: React.FC<MarketProps> = ({
         )}
         <ReviewButton>상점 후기</ReviewButton>
       </ButtonLayout>
-      <ColoredAskButton
-        isActive={raffle.raffleStatus === 'ACTIVE'}
-        onClick={() => navigate(`/ask/${type}`, { state: { raffle } })}
-      >
-        상품 문의
-      </ColoredAskButton>
+             <ColoredAskButton
+         isActive={raffle.raffleStatus === 'ACTIVE'}
+         onClick={() => {
+           console.log('문의하기 버튼 클릭됨');
+           console.log('type 값:', type);
+           console.log('raffle 데이터:', raffle);
+           
+           if (!type) {
+             console.error('❌ type 값이 없습니다');
+             alert('래플 정보를 불러올 수 없습니다.');
+             return;
+           }
+           
+           try {
+             const targetPath = `/ask/${type}`;
+             console.log('이동할 경로:', targetPath);
+             navigate(targetPath, { state: { raffle } });
+             console.log('✅ navigate 함수 실행 완료');
+           } catch (error) {
+             console.error('❌ navigate 오류:', error);
+             alert('페이지 이동 중 오류가 발생했습니다.');
+           }
+         }}
+       >
+         상품 문의
+       </ColoredAskButton>
     </Wrapper>
   );
 };
@@ -213,6 +233,8 @@ const ImageBox = styled.div<{ imageUrl: string }>`
 
   background-image: url(${(props) => props.imageUrl});
   background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 `;
 
 const MarketContainer = styled.div`

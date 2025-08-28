@@ -25,7 +25,7 @@ interface TabTypeProps {
   type: number;
 }
 
-// --- 상수 (필요 시 값 교체) ---
+
 const WEPIN_NETWORK = 'Verychain';
 const SERVICE_WALLET_ADDRESS = '0x789e278621f6359239ede24643ce22ce341bc5ee';
 const TICKET_PRICE_IN_CRYPTO = 1;
@@ -50,27 +50,68 @@ const EXCHANGE_CONTRACT_ABI = [
 ];
 
 // --- 이 페이지 안에서 WepinProvider 생성 + 초기화 + EVM Provider/Signer 준비 ---
-const wepinProvider = new WepinProvider({
-  appId: import.meta.env.VITE_WEPIN_APP_ID as string,
-  appKey: import.meta.env.VITE_WEPIN_APP_KEY as string,
-});
+let wepinProvider: WepinProvider | null = null;
+
+function createWepinProvider() {
+  const appId = import.meta.env.VITE_WEPIN_APP_ID;
+  const appKey = import.meta.env.VITE_WEPIN_APP_KEY;
+  
+  if (!appId || !appKey) {
+    console.warn('⚠️ Wepin 환경 변수가 설정되지 않았습니다.');
+    console.warn('📝 프로젝트 루트에 .env 파일을 생성하고 다음을 추가하세요:');
+    console.warn('   VITE_WEPIN_APP_ID=your_app_id');
+    console.warn('   VITE_WEPIN_APP_KEY=your_app_key');
+    return null;
+  }
+  
+  try {
+    return new WepinProvider({
+      appId,
+      appKey,
+    });
+  } catch (error) {
+    console.error('❌ WepinProvider 생성 중 오류 발생:', error);
+    return null;
+  }
+}
 
 async function initWepinProvider() {
+  if (!wepinProvider) {
+    wepinProvider = createWepinProvider();
+  }
+  
+  if (!wepinProvider) {
+    throw new Error('WepinProvider를 초기화할 수 없습니다. 환경 변수를 확인해주세요.');
+  }
+  
   if (!wepinProvider.isInitialized()) {
-    await wepinProvider.init({
-      defaultLanguage: 'ko',
-      defaultCurrency: 'KRW',
-    });
-    console.log('WepinProvider 초기화 완료');
+    try {
+      await wepinProvider.init({
+        defaultLanguage: 'ko',
+        defaultCurrency: 'KRW',
+      });
+      console.log('✅ WepinProvider 초기화 완료');
+    } catch (error) {
+      console.error('❌ WepinProvider 초기화 중 오류 발생:', error);
+      throw error;
+    }
   }
   return wepinProvider;
 }
 
 async function getWepinEvmProvider(): Promise<any> {
-  const wp = await initWepinProvider();
-  // VERY Mainnet: evmvery (chainId 4613 = 0x1205)
-  const provider = await wp.getProvider('evmvery');
-  return provider; // EIP-1193 provider
+  try {
+    const wp = await initWepinProvider();
+    if (!wp) {
+      throw new Error('WepinProvider를 초기화할 수 없습니다.');
+    }
+    // VERY Mainnet: evmvery (chainId 4613 = 0x1205)
+    const provider = await wp.getProvider('evmvery');
+    return provider; // EIP-1193 provider
+  } catch (error) {
+    console.error('❌ Wepin EVM Provider 가져오기 실패:', error);
+    throw error;
+  }
 }
 
 function TabPage({ type }: TabTypeProps) {

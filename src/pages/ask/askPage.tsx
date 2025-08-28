@@ -36,8 +36,23 @@ const AskPage = () => {
   const [notAnswered, setNotAnswered] = useState<IAnswerItem[]>([]);
   const { state } = useLocation();
   const { type } = useParams();
+  
+  // state가 없거나 raffle이 없는 경우 처리
+  if (!state || !state.raffle) {
+    console.error('❌ state 또는 raffle 데이터가 없습니다:', state);
+    return (
+      <Container>
+        <BigTitle>문의 게시판</BigTitle>
+        <div style={{ textAlign: 'center', padding: '50px' }}>
+          <p>래플 정보를 불러올 수 없습니다.</p>
+          <button onClick={() => window.history.back()}>뒤로 가기</button>
+        </div>
+      </Container>
+    );
+  }
+  
   const sRaffle = state.raffle;
-  console.log(sRaffle);
+  console.log('✅ raffle 데이터:', sRaffle);
   const formatDate = (isoString: string) =>
     new Date(isoString).toLocaleString('ko-KR', {
       year: 'numeric',
