@@ -82,7 +82,7 @@ const MyProfilePage: React.FC = () => {
             // 현재 시간과 응모 마감 시간 비교
             const currentTime = new Date().getTime();
             const endTime = new Date(item.timeUntilEnd).getTime();
-            const isFinished = currentTime > endTime;
+            const isFinished = endTime > 0 ? false : true;
 
             return {
               ...item,

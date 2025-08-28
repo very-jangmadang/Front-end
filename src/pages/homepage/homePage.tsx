@@ -45,7 +45,7 @@ const HomePage: React.FC = () => {
   }, [isAuthenticated]);
 
   if (!homeData) return <div>Loading...</div>;
-
+  console.log('홈 화면 데이터:', homeData);
   return (
     <>
       <AdBanner />
