@@ -7,29 +7,7 @@ import axiosInstance from '../../apis/axiosInstance';
 const Payment: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState('7d');
   const [combinedHistory, setCombinedHistory] = useState<any[]>([]);
-  const [bankName, setBankName] = useState('');
-  const [bankNumber, setBankNumber] = useState('');
   const [loading, setLoading] = useState(false);
-
-  const fetchBankInfo = async () => {
-    try {
-      const response = await axiosInstance.get('/api/member/payment/bankInfo');
-
-      if (response.data.isSuccess) {
-        const { bankName, bankNumber } = response.data.result;
-        setBankName(bankName || '');
-        setBankNumber(bankNumber || '');
-      } else {
-        console.warn('계좌 정보 조회 실패:', response.data.message);
-      }
-    } catch (error) {
-      console.error('계좌 정보 조회 중 오류 발생:', error);
-    }
-  };
-
-  useEffect(() => {
-    fetchBankInfo();
-  }, []);
 
   const fetchPaymentHistory = async () => {
     setLoading(true);
@@ -89,7 +67,7 @@ const Payment: React.FC = () => {
           date: formattedDate, // ✅ 날짜 + 시간 표시
           timestamp, // ✅ 정렬을 위한 timestamp 추가
           type: '충전',
-          amount: item.amount * 100, // ✅ 금액 100배 변환
+          amount: item.amount, // ✅ 원래 티켓 수량 그대로 사용
           user_ticket: item.amount, // ✅ 충전한 티켓 수량
         };
       });
@@ -102,7 +80,7 @@ const Payment: React.FC = () => {
           date: formattedDate, // ✅ 날짜 + 시간 표시
           timestamp, // ✅ 정렬을 위한 timestamp 추가
           type: '환전',
-          amount: item.amount * 100, // ✅ 금액 100배 변환
+          amount: item.amount, // ✅ 원래 티켓 수량 그대로 사용
           user_ticket: item.amount, // ✅ 환전한 티켓 수량
         };
       });
@@ -124,65 +102,8 @@ const Payment: React.FC = () => {
     fetchPaymentHistory();
   }, [selectedTab]);
 
-  /** ✅ 계좌 정보 등록 */
-  const handleBankInfoSubmit = async () => {
-    if (!bankName || !bankNumber) {
-      alert('은행명과 계좌번호를 입력하세요.');
-      return;
-    }
-
-    try {
-      const response = await axiosInstance.post(
-        '/api/member/payment/bankInfo',
-        {
-          bankName,
-          bankNumber,
-        },
-      );
-
-      if (response.data.isSuccess) {
-        alert('계좌 정보가 등록되었습니다!');
-      } else {
-        alert(response.data.message || '계좌 정보 등록에 실패했습니다.');
-      }
-    } catch (error) {
-      console.error('계좌 정보 등록 중 오류 발생:', error);
-      alert('서버 오류가 발생했습니다. 다시 시도해주세요.');
-    }
-  };
-
   return (
     <Container>
-      <TitleWrapper>
-        <BigTitle>결제 정보 설정</BigTitle>
-      </TitleWrapper>
-
-      <Section>
-        <Row>
-          <SmallTitle>내 계좌</SmallTitle>
-          <AccountText>환전 시 해당 계좌로 정산됩니다.</AccountText>
-        </Row>
-        <AccountInfo>
-          <AccountNumberWrapper>
-            <AccountInput
-              type="text"
-              placeholder="은행명"
-              value={bankName}
-              onChange={(e) => setBankName(e.target.value)}
-            />
-            <AccountInput2
-              type="text"
-              placeholder="계좌번호"
-              value={bankNumber}
-              onChange={(e) => setBankNumber(e.target.value)}
-            />
-          </AccountNumberWrapper>
-          <ChangeButton onClick={handleBankInfoSubmit}>
-            계좌 변경하기
-          </ChangeButton>
-        </AccountInfo>
-      </Section>
-
       <TitleWrapper>
         <BigTitle>충전/환전 내역 조회하기</BigTitle>
       </TitleWrapper>
@@ -248,55 +169,6 @@ const Payment: React.FC = () => {
 
 export default Payment;
 
-const AccountNumberWrapper = styled.div`
-  display: flex;
-  gap: 10px;
-`;
-
-const AccountInput = styled.input`
-  padding: 9px 18px;
-  width: 140px;
-  border: none;
-  border-radius: 3px;
-  background: #f5f5f5;
-  font-size: 20px;
-  color: #c908ff;
-  text-align: center;
-  font-family: Pretendard;
-`;
-
-const AccountInput2 = styled.input`
-  padding: 9px 18px;
-  width: 220px;
-  border: none;
-  border-radius: 3px;
-  background: #f5f5f5;
-  font-size: 20px;
-  color: #c908ff;
-  text-align: center;
-  font-family: Pretendard;
-`;
-
-const ChangeButton = styled.button`
-  border-radius: 6px;
-  background-color: white;
-  border: 1px solid #8f8e94;
-  color: #8f8e94;
-  font-size: 14px;
-  font-weight: 500;
-  display: flex;
-  height: 26px;
-  width: 100px;
-  justify-content: center;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-
-  &:hover {
-    background-color: #f9f9f9;
-  }
-`;
-
 const LoadingMessage = styled.div`
   font-size: 18px;
   margin-top: 20px;
@@ -318,13 +190,6 @@ const TitleWrapper = styled.div`
   z-index: 10;
 `;
 
-const Section = styled.div`
-  width: 100%;
-  margin-top: 66px;
-  text-align: left;
-  padding-left: 110px;
-`;
-
 const Section2 = styled.div`
   display: flex;
   flex-direction: column;
@@ -332,30 +197,6 @@ const Section2 = styled.div`
   align-items: center;
   width: 100%;
   margin-top: 66px;
-`;
-
-const Row = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
-`;
-
-const AccountInfo = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 60px;
-  margin-top: 40px;
-  margin-bottom: 77px;
-`;
-
-const AccountText = styled.div`
-  color: #8f8e94;
-  font-family: Pretendard;
-  font-size: 20px;
-  font-weight: 400;
-  line-height: 30px;
 `;
 
 const TabContainer = styled.div`
