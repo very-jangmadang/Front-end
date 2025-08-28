@@ -244,7 +244,7 @@ function TabPage({ type }: TabTypeProps) {
         <Line />
         <Option>
           <div>{type === 0 ? '티켓 금액' : '입금 받을 금액'}</div>
-          <div>{(Number(ticket) || 0) * 100}원</div>{' '}
+          <div>{(Number(ticket) || 0)}very</div>{' '}
         </Option>
         <Line />
         <div

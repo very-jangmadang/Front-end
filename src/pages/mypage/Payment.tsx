@@ -67,7 +67,7 @@ const Payment: React.FC = () => {
           date: formattedDate, // ✅ 날짜 + 시간 표시
           timestamp, // ✅ 정렬을 위한 timestamp 추가
           type: '충전',
-          amount: item.amount * 100, // ✅ 금액 100배 변환
+          amount: item.amount, // ✅ 원래 티켓 수량 그대로 사용
           user_ticket: item.amount, // ✅ 충전한 티켓 수량
         };
       });
@@ -80,7 +80,7 @@ const Payment: React.FC = () => {
           date: formattedDate, // ✅ 날짜 + 시간 표시
           timestamp, // ✅ 정렬을 위한 timestamp 추가
           type: '환전',
-          amount: item.amount * 100, // ✅ 금액 100배 변환
+          amount: item.amount, // ✅ 원래 티켓 수량 그대로 사용
           user_ticket: item.amount, // ✅ 환전한 티켓 수량
         };
       });
@@ -139,7 +139,7 @@ const Payment: React.FC = () => {
                   <TableHeader>일자</TableHeader>
                   <TableHeader>수량</TableHeader>
                   <TableHeader>수단</TableHeader>
-                  <TableHeader>금액</TableHeader>
+                  <TableHeader>티켓 금액</TableHeader>
                 </TableRow>
               </thead>
               <tbody>
@@ -152,7 +152,7 @@ const Payment: React.FC = () => {
                       <TableCell>
                         {item.paymentMethod || item.exchangeMethod}
                       </TableCell>
-                      <TableCell>{item.amount}원</TableCell>
+                      <TableCell>{item.amount}very</TableCell>
                     </TableRow>
                   ))
                 ) : (
