@@ -347,11 +347,7 @@ function TabPage({ type }: TabTypeProps) {
             display: 'flex',
             justifyContent: 'flex-end',
           }}
-        >
-          {!isSmallScreen && type === 1 && (
-            <Info>환전 시 등록된 계좌로 정산됩니다.</Info>
-          )}
-        </div>
+        ></div>
       </Options>
     </Container>
   );
