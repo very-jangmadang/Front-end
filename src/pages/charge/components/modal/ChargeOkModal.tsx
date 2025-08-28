@@ -7,6 +7,7 @@ import { useModalContext } from '../../../../components/Modal/context/ModalConte
 import { useQuery } from '@tanstack/react-query';
 import { GetChargeHistory } from '../../apis/chargeAPI';
 import { THistory } from '../../apis/chargeType';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 interface ModalProps {
   onClose: () => void;
@@ -15,6 +16,7 @@ interface ModalProps {
 
 const ChargeOkModal: React.FC<ModalProps> = ({ onClose, txId }) => {
   const { clearModals } = useModalContext();
+  const navigate = useNavigate();
 
   const {
     data: history,
@@ -72,7 +74,7 @@ const ChargeOkModal: React.FC<ModalProps> = ({ onClose, txId }) => {
             잔여 티켓: {chargeData.user_ticket}개
           </Sname>
         </Option>
-        <Button onClick={clearModals}>홈 화면으로 돌아가기</Button>
+        <Button onClick={() => navigate('/')}>홈 화면으로 돌아가기</Button>
       </Container>
     </Modal>
   );

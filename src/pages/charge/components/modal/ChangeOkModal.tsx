@@ -7,17 +7,19 @@ import { useQuery } from '@tanstack/react-query';
 import { GetExchangeHistory } from '../../apis/chargeAPI';
 import { THistory } from '../../apis/chargeType';
 import ticket from '../../../../assets/ticket.svg';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 interface ModalProps {
   onClose: () => void;
+  txId: string;
 }
 
-const ChangeOkModal: React.FC<ModalProps> = ({ onClose }) => {
+const ChangeOkModal: React.FC<ModalProps> = ({ onClose, txId }) => {
   const { clearModals } = useModalContext();
+  const navigate = useNavigate();
 
   const {
     data: history = { result: [] },
-
     isPending,
     isError,
   } = useQuery({
@@ -32,7 +34,11 @@ const ChangeOkModal: React.FC<ModalProps> = ({ onClose }) => {
     return <p>에러</p>;
   }
 
-  const chargeData: THistory = history?.result?.[0];
+  const chargeData: THistory = history?.result?.[0] || {
+    amount: 0,
+    user_ticket: 0,
+    confirmedAt: '',
+  };
 
   return (
     <Modal onClose={onClose}>
@@ -44,25 +50,25 @@ const ChangeOkModal: React.FC<ModalProps> = ({ onClose }) => {
           <Ticket>{chargeData?.amount}개</Ticket>
         </TicketBox>
         <Option>
-          <Name>거래 날짜</Name>
-          <Name>
-            {new Date(chargeData?.confirmedAt)
-              .toLocaleDateString('ko-KR')
-              .replace(/-/g, '.')}
+          <Name>Tx ID</Name>
+          <Name
+            as="a"
+            href={`https://www.veryscan.io/tx/${txId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {txId.slice(0, 15) + '...' + txId.slice(-4)}
           </Name>
         </Option>
         <Line />
+
         <Option>
-          <Sname>적용 수수료</Sname>
-          <Sname>7%</Sname>
-        </Option>
-        <Option>
-          <Sname>사용한 티켓</Sname>
+          <Sname>환전한 티켓</Sname>
           <Sname>{chargeData?.amount}개</Sname>
         </Option>
         <Option>
           <Name>입금 받은 금액</Name>
-          <Price>{Number(chargeData?.amount) * 100}원</Price>
+          <Price>{Number(chargeData?.amount)}VERY</Price>
         </Option>
         <Option>
           <div></div>
@@ -70,7 +76,7 @@ const ChangeOkModal: React.FC<ModalProps> = ({ onClose }) => {
             잔여 티켓: {chargeData.user_ticket}개
           </Sname>
         </Option>
-        <Button onClick={clearModals}>홈 화면으로 돌아가기</Button>
+        <Button onClick={() => navigate('/')}>홈 화면으로 돌아가기</Button>
       </Container>
     </Modal>
   );

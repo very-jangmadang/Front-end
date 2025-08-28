@@ -218,7 +218,6 @@ const Payment: React.FC = () => {
                   <TableHeader>일자</TableHeader>
                   <TableHeader>수량</TableHeader>
                   <TableHeader>수단</TableHeader>
-                  <TableHeader>금액</TableHeader>
                 </TableRow>
               </thead>
               <tbody>
@@ -231,7 +230,6 @@ const Payment: React.FC = () => {
                       <TableCell>
                         {item.paymentMethod || item.exchangeMethod}
                       </TableCell>
-                      <TableCell>{item.amount}원</TableCell>
                     </TableRow>
                   ))
                 ) : (
