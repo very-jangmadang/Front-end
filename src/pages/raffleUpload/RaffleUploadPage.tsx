@@ -13,7 +13,7 @@ import CustomCalendar from './components/CustomCalendar';
 const RaffleUploadPage = () => {
   const [moreTicketText, setMoreTicketText] = useState<string>('직접 입력');
   const tickets = ['1개', '2개', '3개', moreTicketText];
-  const [ticketNum, setTicketNum] = useState<string>('1개');
+  const [ticketNum, setTicketNum] = useState<string>('');
   // 시작 날짜 최소: 래플 업로드 눌렀을 때 현재 시각 + 10분 후부터 가능
   const [startDate, setStartDate] = useState<null | Date>(null);
   const [endDate, setEndDate] = useState<null | Date>(null);
@@ -247,7 +247,7 @@ const RaffleUploadPage = () => {
           </SetConditionBox>
 
           <SetConditionBox>
-            <TitleSpan2>최소 마감 티켓 개수</TitleSpan2>
+            <TitleSpan2>정가</TitleSpan2>
             <InputContainer>
               <InputBox
                 type="text"
@@ -255,13 +255,6 @@ const RaffleUploadPage = () => {
                 value={leastTicketNum}
                 onChange={handleLeastTicketNum}
               />
-              <StyleP>
-                예상 정산 금액:&nbsp;
-                {(
-                  Number(leastTicketNum.replaceAll(',', '')) * 100
-                ).toLocaleString()}
-                원
-              </StyleP>
             </InputContainer>
           </SetConditionBox>
           <SetConditionBox>
