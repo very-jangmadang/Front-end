@@ -51,14 +51,9 @@ const RaffleUploadPage = () => {
 
     // 모두 입력했는지 확인
     if (images.length === 0) return alert('상품 이미지를 추가해주세요');
-    if (
-      category === '' ||
-      name === '' ||
-      description.length === 0
-    )
+    if (category === '' || name === '' || description.length === 0)
       return alert('상품 정보를 모두 입력해주세요');
-    if (ticketNum === '')
-      return alert('거래 설정을 모두 입력해주세요');
+    if (ticketNum === '') return alert('거래 설정을 모두 입력해주세요');
     if (
       startDate === null ||
       startTime === null ||
@@ -86,7 +81,7 @@ const RaffleUploadPage = () => {
     console.log(endAt);
     if (
       createdAt >= startAt ||
-      endAt.getTime() - startAt.getTime() < 24 * 60 * 60 * 1000 ||
+      endAt.getTime() - startAt.getTime() < 10 * 60 * 1000 ||
       startAt >= endAt
     )
       return alert('개최 기간이 올바르지 않습니다');
@@ -276,8 +271,8 @@ const RaffleUploadPage = () => {
               setDate={setEndDate}
               minDateTime={
                 startDate === null
-                  ? new Date(createdAt.getTime() + 24 * 60 * 60 * 1000)
-                  : new Date(startDate.getTime() + 24 * 60 * 60 * 1000)
+                  ? new Date(createdAt.getTime() + 10 * 60 * 1000)
+                  : new Date(startDate.getTime() + 10 * 60 * 1000)
               }
               maxDateTime={
                 new Date(
@@ -290,7 +285,6 @@ const RaffleUploadPage = () => {
               setTime={setEndTime}
             />
           </SetConditionBox>
-
         </SetConditionContainer>
       </div>
       <SubmitBtn type="submit" value={'업로드'} onClick={handleSubmit} />
