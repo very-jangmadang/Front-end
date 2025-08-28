@@ -278,6 +278,7 @@ const Item: React.FC<RaffleDetailProps> = ({ ...raffle }) => {
             <TitleBox>응모오픈</TitleBox>
             <DescriptionBox>{formatDate(raffle.startAt)}</DescriptionBox>
           </DetailContainer>
+
           <DetailContainer>
             <TitleBox>응모마감</TitleBox>
             <DescriptionBox>{formatDate(raffle.endAt)}</DescriptionBox>
@@ -287,6 +288,10 @@ const Item: React.FC<RaffleDetailProps> = ({ ...raffle }) => {
               raffle.raffleStatus === 'COMPLETED') && (
               <TextBox>응모마감</TextBox>
             )}
+          </DetailContainer>
+          <DetailContainer>
+            <TitleBox>정가</TitleBox>
+            <DescriptionBox>{raffle.minTicket}</DescriptionBox>
           </DetailContainer>
           {isLargeScreen && ActionArea}
         </DetailLayout>

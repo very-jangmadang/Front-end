@@ -36,7 +36,9 @@ const AskPage = () => {
   const [notAnswered, setNotAnswered] = useState<IAnswerItem[]>([]);
   const { state } = useLocation();
   const { type } = useParams();
-  
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalImageIndex, setModalImageIndex] = useState(0);
+
   // state가 없거나 raffle이 없는 경우 처리
   if (!state || !state.raffle) {
     console.error('❌ state 또는 raffle 데이터가 없습니다:', state);
@@ -50,7 +52,7 @@ const AskPage = () => {
       </Container>
     );
   }
-  
+
   const sRaffle = state.raffle;
   console.log('✅ raffle 데이터:', sRaffle);
   const formatDate = (isoString: string) =>
@@ -94,6 +96,11 @@ const AskPage = () => {
     }
   }, [type]);
 
+  const handleImageClick = (index: number) => {
+    setModalImageIndex(index);
+    setIsModalOpen(true);
+  };
+
   return (
     <Container>
       <BigTitle>문의 게시판</BigTitle>
@@ -110,8 +117,8 @@ const AskPage = () => {
             <RaffleClosingBox>응모 마감</RaffleClosingBox>
           )}
         </ImgSlider>
-        {media.small && <ItemTitleBox>{sRaffle.name}</ItemTitleBox>}
-        {!media.small && (
+        {!media.small && <ItemTitleBox>{sRaffle.name}</ItemTitleBox>}
+        {media.small && (
           <DetailLayout>
             <ItemTitleBox>{sRaffle.name}</ItemTitleBox>
             <ViewBox>
@@ -144,12 +151,8 @@ const AskPage = () => {
       </TopLayout>
       <AskLayout>
         <MenuTab>
-          <Menu
-            onClick={() => setMenu(NOT_ANSWERED)}
-            $myMenu={NOT_ANSWERED}
-            $menu={menu}
-          >
-            답변 미작성
+          <Menu onClick={() => setMenu(ASK)} $myMenu={ASK} $menu={menu}>
+            문의하기
           </Menu>
           <Menu
             onClick={() => setMenu(ANSWERED)}
@@ -158,8 +161,12 @@ const AskPage = () => {
           >
             답변 작성 완료
           </Menu>
-          <Menu onClick={() => setMenu(ASK)} $myMenu={ASK} $menu={menu}>
-            문의하기
+          <Menu
+            onClick={() => setMenu(NOT_ANSWERED)}
+            $myMenu={NOT_ANSWERED}
+            $menu={menu}
+          >
+            답변 미작성
           </Menu>
         </MenuTab>
         {menu === NOT_ANSWERED ? (
@@ -240,12 +247,12 @@ const DetailLayout = styled.div`
 
 const ItemTitleBox = styled.p`
   display: flex;
-  width: 209px;
+  width: 100%;
   height: 29px;
-  flex-direction: column;
-  justify-content: center;
+  flex-direction: row;
+  justify-content: space-between;
   flex-shrink: 0;
-  margin: 23px 0 15px;
+  margin-bottom: 15px;
 
   color: #000;
   font-family: Pretendard;
@@ -253,15 +260,31 @@ const ItemTitleBox = styled.p`
   font-style: normal;
   font-weight: 700;
   line-height: 150%; /* 33px */
-  ${media.medium`
-    margin: 8px 0 15px;
-  `}
-  ${media.small`
-    width: 100%;
-    text-align: center;
-    font-size: 20px;
-  `}
 `;
+
+const DeleteBox = styled.div`
+  display: flex;
+  height: 26px;
+  padding: 0px 14px;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  position: absolute;
+  right: 0;
+
+  flex-shrink: 0;
+  border-radius: 11px;
+  border: 1px solid #8f8e94;
+
+  color: var(--Main-Grey, #8f8e94);
+  text-align: center;
+  font-family: 'Pretendard Variable';
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 36.832px; /* 230.199% */
+`;
+
 const ViewBox = styled.div`
   display: flex;
   width: 110px;
@@ -283,9 +306,9 @@ const ViewBox = styled.div`
   text-underline-offset: auto;
   text-underline-position: from-font;
 `;
+
 const TicketBox = styled.div`
   display: flex;
-  align-items: center;
   gap: 8.31px;
   padding-top: 40px;
   padding-bottom: 38.98px;
@@ -304,11 +327,8 @@ const DetailContainer = styled.div`
 
   gap: 50px;
   padding-bottom: 26px;
-
-  &.last {
-    padding-bottom: 0;
-  }
 `;
+
 const TitleBox = styled.div`
   display: inline-block;
   min-width: 59px;
@@ -322,7 +342,7 @@ const TitleBox = styled.div`
 `;
 const DescriptionBox = styled.div`
   display: flex;
-  max-width: 269px;
+  width: 269px;
   height: 19px;
   flex-direction: column;
   justify-content: center;
