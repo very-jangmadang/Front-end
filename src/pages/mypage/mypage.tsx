@@ -9,7 +9,6 @@ import axiosInstance from '../../apis/axiosInstance';
 import media from '../../styles/media';
 import { useAuth } from '../../context/AuthContext';
 
-
 interface ProfileData {
   nickname: string;
   followerNum: number;
@@ -23,7 +22,8 @@ const MyProfilePage: React.FC = () => {
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [isNameEditModalOpen, setIsNameEditModalOpen] = useState(false);
-  const { isAuthenticated, isBusiness, isInitialized, checkBusinessStatus } = useAuth();
+  const { isAuthenticated, isBusiness, isInitialized, checkBusinessStatus } =
+    useAuth();
 
   const navigate = useNavigate();
 
@@ -40,7 +40,7 @@ const MyProfilePage: React.FC = () => {
     setLoading(true);
     try {
       let endpoint = '/api/member/mypage';
-      
+
       if (selectedToggle === '응모한 래플') {
         endpoint = '/api/member/mypage';
       } else if (selectedToggle === '주최하는 래플') {
@@ -50,18 +50,20 @@ const MyProfilePage: React.FC = () => {
       }
 
       const { data } = await axiosInstance.get(endpoint);
+      console.log(`${selectedToggle}: `, data);
 
       if (data.isSuccess) {
         let raffles = [];
-        
+
         if (selectedToggle === '찜한 래플') {
           // 찜한 래플 API 응답 구조에 맞게 데이터 변환
           raffles = (data.result || []).map((item: any) => {
             // 현재 시간과 응모 마감 시간 비교
             const currentTime = new Date().getTime();
             const endTime = new Date(item.timeUntilEnd).getTime();
-            const isFinished = currentTime > endTime;
-            
+
+            const isFinished = endTime > 0 ? false : true;
+
             return {
               raffleId: item.raffleId,
               raffleName: item.raffleName,
@@ -81,7 +83,7 @@ const MyProfilePage: React.FC = () => {
             const currentTime = new Date().getTime();
             const endTime = new Date(item.timeUntilEnd).getTime();
             const isFinished = currentTime > endTime;
-            
+
             return {
               ...item,
               finished: isFinished, // 현재 시간과 마감 시간 비교 결과
@@ -103,7 +105,7 @@ const MyProfilePage: React.FC = () => {
       }
     } catch (error: any) {
       console.error('API 요청 중 오류 발생:', error);
-      
+
       // 로그인되지 않은 경우에만 에러 처리
       if (error.response?.status === 401 && !isAuthenticated) {
         console.log('로그인이 필요합니다.');
@@ -111,7 +113,7 @@ const MyProfilePage: React.FC = () => {
         navigate('/');
         return;
       }
-      
+
       setProfileData(null);
     } finally {
       setLoading(false);
@@ -120,14 +122,16 @@ const MyProfilePage: React.FC = () => {
 
   // 마이페이지를 열 때마다 사업자 여부를 최신 상태로 업데이트
   useEffect(() => {
-    console.log('=== MyProfilePage: 마이페이지 마운트 - 사업자 여부 재확인 시작 ===');
-    
+    console.log(
+      '=== MyProfilePage: 마이페이지 마운트 - 사업자 여부 재확인 시작 ===',
+    );
+
     // 인증 상태 초기화가 완료된 후에만 처리
     if (!isInitialized) {
       console.log('인증 상태 초기화 중...');
       return;
     }
-    
+
     if (isAuthenticated === true) {
       console.log('=== MyProfilePage: 사업자 여부 재확인 시작 ===');
       checkBusinessStatus();
@@ -146,7 +150,7 @@ const MyProfilePage: React.FC = () => {
     }
   }, [selectedToggle, isAuthenticated, isInitialized]);
 
-    // 토글 옵션 결정
+  // 토글 옵션 결정
   const getToggleOptions = () => {
     if (isBusiness) {
       return ['응모한 래플', '주최하는 래플'];
@@ -180,8 +184,8 @@ const MyProfilePage: React.FC = () => {
         ) : null}
 
         <ToggleContainer>
-          <ToggleIndicator 
-            selectedToggle={selectedToggle} 
+          <ToggleIndicator
+            selectedToggle={selectedToggle}
             toggleOptions={toggleOptions}
           />
           {toggleOptions.map((option) => (
@@ -272,7 +276,10 @@ const ToggleContainer = styled.div`
   }
 `;
 
-const ToggleIndicator = styled.div<{ selectedToggle: string; toggleOptions: string[] }>`
+const ToggleIndicator = styled.div<{
+  selectedToggle: string;
+  toggleOptions: string[];
+}>`
   position: absolute;
   width: ${({ toggleOptions }) => `calc(100% / ${toggleOptions.length})`};
   height: 100%;
@@ -305,9 +312,9 @@ const ToggleOption = styled.div<{ selectedToggle: string; value: string }>`
 
 const ProductGrid = styled.div`
   display: grid;
-  grid-gap: 24px; 
+  grid-gap: 24px;
   padding: 20px;
-  place-items: center; 
+  place-items: center;
 
   grid-template-columns: repeat(4, minmax(250px, 1fr));
 
@@ -321,10 +328,7 @@ const ProductGrid = styled.div`
     grid-template-columns: repeat(1, 1fr);
     gap: 9px;
   `}
-
 `;
-
-
 
 const LoadingMessage = styled.div`
   text-align: center;

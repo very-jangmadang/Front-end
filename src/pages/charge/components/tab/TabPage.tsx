@@ -248,7 +248,9 @@ function TabPage({ type }: TabTypeProps) {
       handleOpenChargeOkModal(result.txId);
     } catch (error) {
       console.error('Wepin 트랜잭션 처리 중 오류 발생:', error);
-      alert('티켓 충전 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+      alert(
+        '티켓 충전 중 오류가 발생했습니다. 잔액 확인 후 다시 시도해주세요.',
+      );
     }
   };
 

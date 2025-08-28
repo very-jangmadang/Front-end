@@ -76,7 +76,9 @@ const ChangeOkModal: React.FC<ModalProps> = ({ onClose, txId }) => {
             잔여 티켓: {chargeData.user_ticket}개
           </Sname>
         </Option>
-        <Button onClick={() => navigate('/')}>홈 화면으로 돌아가기</Button>
+        <Button onClick={() => navigate('/mypage/payment')}>
+          충전/환전 내역 조회하기
+        </Button>
       </Container>
     </Modal>
   );
@@ -140,6 +142,11 @@ const Name = styled.div`
   font-size: 14px;
   font-style: normal;
   font-weight: 400;
+
+  &[href] {
+    color: #c908ff;
+    text-decoration: none;
+  }
 `;
 
 const Option = styled.div`
