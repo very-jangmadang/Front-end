@@ -351,6 +351,7 @@ const ProfileImageWrapper = styled.div`
   position: relative;
   width: 222px;
   height: 222px;
+  aspect-ratio: 1 / 1;
 
   @media (max-width: 1024px) { /* 태블릿 가로 & 소형 노트북 */
     width: 200px;
@@ -477,6 +478,7 @@ const ProfileImage = styled.img`
   height: 100%;
   border-radius: 50%;
   object-fit: cover;
+  aspect-ratio: 1 / 1;
 `;
 
 
