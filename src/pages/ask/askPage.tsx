@@ -41,7 +41,7 @@ const AskPage = () => {
 
   // state가 없거나 raffle이 없는 경우 처리
   if (!state || !state.raffle) {
-    console.error('❌ state 또는 raffle 데이터가 없습니다:', state);
+    console.error('state 또는 raffle 데이터가 없습니다:', state);
     return (
       <Container>
         <BigTitle>문의 게시판</BigTitle>

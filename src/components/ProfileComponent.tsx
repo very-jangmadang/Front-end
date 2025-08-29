@@ -162,15 +162,23 @@ const ProfileComponent: React.FC<ProfileProps> = ({
           </UserInfo>
 
           <StatsContainer>
-            {/* 일반 계정: 팔로워 수 + 팔로잉 목록 버튼 */}
+            {/* 일반 계정: 팔로워 수 + 팔로잉 목록 또는 팔로우 버튼 */}
             {!isBusinessUser && (
               <>
                 <StatItem>
                   팔로워 <StatNumber>{followers <= -1 ? "비공개" : followers}</StatNumber>
                 </StatItem>
-                <StyledButton onClick={() => navigate("/mypage/following-list")}>
-                  팔로잉 목록
-                </StyledButton>
+                {isUserProfilePage ? (
+                  /* 상대 프로필일 때: 팔로우/팔로우 취소 버튼 */
+                  <FollowButton isFollowing={isFollowing} onClick={handleFollowToggle}>
+                    {isFollowing ? "팔로우 취소" : "팔로우하기"}
+                  </FollowButton>
+                ) : (
+                  /* 마이페이지일 때: 팔로잉 목록 버튼 */
+                  <StyledButton onClick={() => navigate("/mypage/following-list")}>
+                    팔로잉 목록
+                  </StyledButton>
+                )}
               </>
             )}
             
@@ -199,13 +207,9 @@ const ProfileComponent: React.FC<ProfileProps> = ({
           )}
 
           <ButtonContainer>
-            {/* 남의 페이지일 때: 팔로우하기 버튼 */}
-            {isUserProfilePage ? (
-              <FollowButton isFollowing={isFollowing} onClick={handleFollowToggle}>
-                {isFollowing ? "팔로우 취소" : "팔로우하기"}
-              </FollowButton>
-            ) : (
-              /* 마이페이지일 때: 버튼 없음 (StatsContainer에 팔로잉 목록 버튼이 있음) */
+            {/* 상대 프로필일 때는 StatsContainer에 팔로우 버튼이 있으므로 여기서는 버튼 없음 */}
+            {!isUserProfilePage && (
+              /* 마이페이지일 때만 추가 버튼들 표시 */
               null
             )}
           </ButtonContainer>
