@@ -15,6 +15,7 @@ interface ModalProps {
 
 const BusinessNumberModal: React.FC<ModalProps> = ({ onClose }) => {
   const [businessCode, setBusinessCode] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const { openModal } = useModalContext();
   const [isLargeScreen, setIsLargeScreen] = useState<boolean>(() =>
     typeof window !== 'undefined' ? window.innerWidth >= 745 : false,
@@ -40,6 +41,11 @@ const BusinessNumberModal: React.FC<ModalProps> = ({ onClose }) => {
   };
 
   const handleOpenNextModal = async () => {
+    // 이미 로딩 중이면 중복 실행 방지
+    if (isLoading) {
+      return;
+    }
+
     console.log('BusinessNumberModal - 계속하기 버튼 클릭');
     console.log('사업자 등록번호:', businessCode);
     
@@ -47,6 +53,9 @@ const BusinessNumberModal: React.FC<ModalProps> = ({ onClose }) => {
       console.log('사업자 등록번호가 입력되지 않음');
       return;
     }
+
+    // 로딩 상태 시작
+    setIsLoading(true);
 
     try {
       // 사업자등록번호 검증 API 호출 (isBusiness: true와 함께)
@@ -73,6 +82,9 @@ const BusinessNumberModal: React.FC<ModalProps> = ({ onClose }) => {
       console.error('사업자등록번호 검증 요청 실패:', error);
       // 에러 처리 로직 추가 가능
       return;
+    } finally {
+      // 로딩 상태 종료
+      setIsLoading(false);
     }
   };
 
@@ -111,7 +123,12 @@ const BusinessNumberModal: React.FC<ModalProps> = ({ onClose }) => {
             onChange={handleBusinessCodeChange}
           />
         </InputContainer>
-        <Button onClick={handleOpenNextModal}>계속하기</Button>
+        <Button 
+          onClick={handleOpenNextModal} 
+          disabled={isLoading || !businessCode.trim()}
+        >
+          {isLoading ? '검증 중...' : '계속하기'}
+        </Button>
       </Container>
     </Contents>
   );

@@ -39,6 +39,7 @@ const BusinessSignupModal: React.FC<ModalProps> = ({ onClose }) => {
   const { openModal } = useModalContext();
   const [isError, setIsError] = useState('');
   const [businessName, setBusinessName] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const regex = /^[가-힣a-zA-Z0-9]{2,10}$/;
 
@@ -51,6 +52,11 @@ const BusinessSignupModal: React.FC<ModalProps> = ({ onClose }) => {
   }, [businessName]);
 
   const handleOpenNextModal = async () => {
+    // 이미 로딩 중이면 중복 실행 방지
+    if (isLoading) {
+      return;
+    }
+
     console.log('=== 사업자 회원가입 프로세스 시작 ===');
     console.log('입력된 사업자명:', businessName);
     console.log('정규식 테스트 결과:', regex.test(businessName));
@@ -61,6 +67,10 @@ const BusinessSignupModal: React.FC<ModalProps> = ({ onClose }) => {
       setIsError('사업자명은 2~10자의 한글 또는 영어만 사용 가능합니다.');
       return;
     }
+
+    // 로딩 상태 시작
+    setIsLoading(true);
+    setIsError('');
 
     console.log('사업자 회원가입 프로세스 시작:', { businessName, baseURL: axiosInstance.defaults.baseURL });
 
@@ -110,6 +120,9 @@ const BusinessSignupModal: React.FC<ModalProps> = ({ onClose }) => {
         console.error('기타 에러:', error.message);
         setIsError('회원가입 중 오류가 발생했습니다.');
       }
+    } finally {
+      // 로딩 상태 종료
+      setIsLoading(false);
     }
   };
 
@@ -177,8 +190,8 @@ const BusinessSignupModal: React.FC<ModalProps> = ({ onClose }) => {
           onChange={handleChangeBusinessName}
           placeholder="사업자명을 입력하세요. (한글 및 영어 2~10자)"
         />
-        <Button disabled={!businessName} onClick={handleOpenNextModal}>
-          회원가입
+        <Button disabled={!businessName || isLoading} onClick={handleOpenNextModal}>
+          {isLoading ? '가입 중...' : '회원가입'}
         </Button>
       </Container>
     </Contents>

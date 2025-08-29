@@ -367,7 +367,6 @@ const ReviewButton = styled.button`
 
   cursor: pointer;
 `;
-
 const AskButton = styled.button`
   all: unset;
   display: flex;
@@ -389,3 +388,4 @@ const AskButton = styled.button`
 
   cursor: pointer;
 `;
+

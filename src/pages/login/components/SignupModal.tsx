@@ -48,6 +48,7 @@ const SignupModal: React.FC<ModalProps> = ({ onClose, isBusiness = false }) => {
   const { openModal } = useModalContext();
   const [isError, setIsError] = useState('');
   const [name, setName] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const regex = /^[가-힣a-zA-Z0-9]{2,10}$/;
 
@@ -60,6 +61,11 @@ const SignupModal: React.FC<ModalProps> = ({ onClose, isBusiness = false }) => {
   }, [name]);
 
   const handleOpenNextModal = async () => {
+    // 이미 로딩 중이면 중복 실행 방지
+    if (isLoading) {
+      return;
+    }
+
     console.log('=== 회원가입 프로세스 시작 ===');
     console.log('입력된 닉네임:', name);
     console.log('정규식 테스트 결과:', regex.test(name));
@@ -70,6 +76,10 @@ const SignupModal: React.FC<ModalProps> = ({ onClose, isBusiness = false }) => {
       setIsError('닉네임은 2~10자의 한글 또는 영어만 사용 가능합니다.');
       return;
     }
+
+    // 로딩 상태 시작
+    setIsLoading(true);
+    setIsError('');
 
     console.log('회원가입 프로세스 시작:', {
       name,
@@ -105,18 +115,11 @@ const SignupModal: React.FC<ModalProps> = ({ onClose, isBusiness = false }) => {
         console.error('서버 응답 에러:', {
           status: error.response.status,
           data: error.response.data,
-          headers: error.response.headers,
+          headers: error.response.headers
         });
 
         if (error.response.status === 400) {
-          const errorCode = error.response.data?.code;
-
-          if (errorCode === 'USER_4008') {
-            console.log('닉네임 중복');
-            setIsError('중복된 닉네임입니다');
-          } else {
-            setIsError(error.response.data?.message || '잘못된 요청입니다.');
-          }
+          setIsError(error.response.data?.message || '잘못된 요청입니다.');
         } else if (error.response.status === 401) {
           setIsError('인증이 필요합니다.');
         } else if (error.response.status === 403) {
@@ -124,9 +127,7 @@ const SignupModal: React.FC<ModalProps> = ({ onClose, isBusiness = false }) => {
         } else if (error.response.status === 500) {
           setIsError('서버 오류가 발생했습니다.');
         } else {
-          setIsError(
-            error.response.data?.message || '회원가입 중 오류가 발생했습니다.',
-          );
+          setIsError(error.response.data?.message || '회원가입 중 오류가 발생했습니다.');
         }
       } else if (error.request) {
         console.error('네트워크 에러:', error.request);
@@ -135,6 +136,9 @@ const SignupModal: React.FC<ModalProps> = ({ onClose, isBusiness = false }) => {
         console.error('기타 에러:', error.message);
         setIsError('회원가입 중 오류가 발생했습니다.');
       }
+    } finally {
+      // 로딩 상태 종료
+      setIsLoading(false);
     }
   };
 
@@ -202,8 +206,8 @@ const SignupModal: React.FC<ModalProps> = ({ onClose, isBusiness = false }) => {
           onChange={handleChangeName}
           placeholder="닉네임을 입력하세요. (한글 및 영어 2~5자)"
         />
-        <Button disabled={!name} onClick={handleOpenNextModal}>
-          회원가입
+        <Button disabled={!name || isLoading} onClick={handleOpenNextModal}>
+          {isLoading ? '가입 중...' : '회원가입'}
         </Button>
       </Container>
     </Contents>

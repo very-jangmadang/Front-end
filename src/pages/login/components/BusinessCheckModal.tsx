@@ -17,6 +17,7 @@ interface ModalProps {
 
 const BusinessCheckModal: React.FC<ModalProps> = ({ onClose }) => {
   const [checked, setChecked] = React.useState([false, false]);
+  const [isLoading, setIsLoading] = useState(false);
   const { openModal } = useModalContext();
   const [isLargeScreen, setIsLargeScreen] = useState<boolean>(() =>
     typeof window !== 'undefined' ? window.innerWidth >= 745 : false,
@@ -49,15 +50,26 @@ const BusinessCheckModal: React.FC<ModalProps> = ({ onClose }) => {
     console.log('Checked State:', checked);
   }, [checked]);
 
-  const handleOpenNextModal = () => {
+  const handleOpenNextModal = async () => {
+    // 이미 로딩 중이면 중복 실행 방지
+    if (isLoading) {
+      return;
+    }
+
     console.log('BusinessCheckModal - 계속하기 버튼 클릭');
     console.log('체크 상태:', checked);
     
     if (checked[0]) {
+      // 로딩 상태 시작
+      setIsLoading(true);
+      
       console.log('사업자 계정 선택 - BusinessNumberModal 열기');
       onClose(); // 현재 모달 닫기
       openModal(({ onClose }) => <BusinessNumberModal onClose={onClose} />);
     } else if (checked[1]) {
+      // 로딩 상태 시작
+      setIsLoading(true);
+      
       console.log('일반 계정 선택 - SignupModal 열기');
       onClose(); // 현재 모달 닫기
       openModal(({ onClose }) => <SignupModal onClose={onClose} isBusiness={false} />);
@@ -125,7 +137,12 @@ const BusinessCheckModal: React.FC<ModalProps> = ({ onClose }) => {
           />
           <Short>일반 계정으로 가입을 원합니다.</Short>
         </Option>
-        <Button onClick={handleOpenNextModal}>계속하기</Button>
+        <Button 
+          onClick={handleOpenNextModal} 
+          disabled={isLoading || !(checked[0] || checked[1])}
+        >
+          {isLoading ? '처리 중...' : '계속하기'}
+        </Button>
       </Container>
     </Contents>
   );

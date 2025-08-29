@@ -164,10 +164,10 @@ const ResponsiveHeader = () => {
           <WepinLogoContainer onClick={() => window.open('https://app.wepin.io/dashboard', '_blank')}>
             <WepinLogo src={wepinLogo} alt="Wepin" />
           </WepinLogoContainer>
-          <LoginBtn onClick={onClickLoginBtn} state={String(isAuthenticated)}>
+          <LoginBtn onClick={onClickLoginBtn} $state={String(isAuthenticated)}>
             {isAuthenticated ? '로그아웃' : '로그인'}
           </LoginBtn>
-          <LineDiv height={'27px'} margin={'0 32px'} />
+          <LineDiv $height={'27px'} $margin={'0 32px'} />
           <SettingIconDiv
             onClick={() => {
               if (isAuthenticated) {
@@ -358,12 +358,12 @@ const TopContainer = styled.div`
   `}
 `;
 
-const LoginBtn = styled.button<{ state: string }>`
+const LoginBtn = styled.button<{ $state: string }>`
   width: 99.355px;
   height: 26.644px;
   border-radius: 40px;
   ${(props) =>
-    props.state === 'true'
+    props.$state === 'true'
       ? `border: 1px solid #8F8E94;
         background-color: transparent;
         color: #8F8E94;
@@ -693,11 +693,11 @@ const IconHamburgerDiv = styled.div`
   }
 `;
 
-const LineDiv = styled.div<{ height: string; margin: string }>`
+const LineDiv = styled.div<{ $height: string; $margin: string }>`
   width: 1px;
-  height: ${(props) => props.height};
+  height: ${(props) => props.$height};
   background: #8f8e94;
-  margin: ${(props) => props.margin};
+  margin: ${(props) => props.$margin};
 
   &.line-1 {
     ${media.medium`

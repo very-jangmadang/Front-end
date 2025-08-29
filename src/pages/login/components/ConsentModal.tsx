@@ -16,6 +16,7 @@ interface ModalProps {
 
 const ConsentModal: React.FC<ModalProps> = ({ onClose }) => {
   const [checked, setChecked] = React.useState([false, false]);
+  const [isLoading, setIsLoading] = useState(false);
   const { openModal } = useModalContext();
 
   const [isLargeScreen, setIsLargeScreen] = useState<boolean>(() =>
@@ -49,11 +50,19 @@ const ConsentModal: React.FC<ModalProps> = ({ onClose }) => {
     setChecked([checked[0], event.target.checked]);
   };
 
-  const handleOpenNextModal = () => {
+  const handleOpenNextModal = async () => {
+    // 이미 로딩 중이면 중복 실행 방지
+    if (isLoading) {
+      return;
+    }
+
     console.log('ConsentModal - 계속하기 버튼 클릭');
     console.log('체크 상태:', checked);
 
     if (checked[0] && checked[1]) {
+      // 로딩 상태 시작
+      setIsLoading(true);
+      
       console.log('모든 약관 동의 완료 - AgeModal 열기');
       onClose(); // 현재 모달 닫기
       openModal(({ onClose }) => <AgeModal onClose={onClose} />);
@@ -146,7 +155,12 @@ const ConsentModal: React.FC<ModalProps> = ({ onClose }) => {
           <Short>(필수) 마케팅 정보 수신 동의</Short>
           <Arrow>&gt;</Arrow>
         </Option>
-        <Button onClick={handleOpenNextModal}>계속하기</Button>
+        <Button 
+          onClick={handleOpenNextModal} 
+          disabled={isLoading || !(checked[0] && checked[1])}
+        >
+          {isLoading ? '처리 중...' : '계속하기'}
+        </Button>
       </Container>
     </Contents>
   );
