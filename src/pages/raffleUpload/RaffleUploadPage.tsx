@@ -250,6 +250,7 @@ const RaffleUploadPage = () => {
                 value={leastTicketNum}
                 onChange={handleLeastTicketNum}
               />
+              VERY
             </InputContainer>
           </SetConditionBox>
           <SetConditionBox>

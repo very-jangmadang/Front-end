@@ -25,7 +25,7 @@ const ConsentModal: React.FC<ModalProps> = ({ onClose }) => {
   useEffect(() => {
     console.log('=== ConsentModal 열림 ===');
     console.log('현재 체크 상태:', checked);
-    
+
     const handleResize = () => {
       setIsLargeScreen(window.innerWidth >= 745);
     };
@@ -52,7 +52,7 @@ const ConsentModal: React.FC<ModalProps> = ({ onClose }) => {
   const handleOpenNextModal = () => {
     console.log('ConsentModal - 계속하기 버튼 클릭');
     console.log('체크 상태:', checked);
-    
+
     if (checked[0] && checked[1]) {
       console.log('모든 약관 동의 완료 - AgeModal 열기');
       onClose(); // 현재 모달 닫기
@@ -122,7 +122,7 @@ const ConsentModal: React.FC<ModalProps> = ({ onClose }) => {
               },
             }}
           />
-          <Short>(필수) 필드 약관 및 동의사항</Short>
+          <Short>(필수) 장마당 약관 및 동의사항</Short>
           <Arrow>&gt;</Arrow>
         </Option>
         <Option>
