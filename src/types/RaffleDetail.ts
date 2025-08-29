@@ -37,4 +37,5 @@ export type RaffleDetailProps = {
   followStatus: boolean;
   storeImageUrl: string;
   children?: React.ReactNode;
+  minTicket: number;
 };

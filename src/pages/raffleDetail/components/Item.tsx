@@ -18,6 +18,7 @@ import { postLike, deleteLike } from '../../../services/likeService';
 import DeleteModal from './modals/DeleteModal';
 import media from '../../../styles/media';
 import useScreenSize from '../../../styles/useScreenSize';
+import smallTicket from '../../../assets/ProductCard/ticket.svg';
 
 const Item: React.FC<RaffleDetailProps> = ({ ...raffle }) => {
   const [isLiked, setIsLiked] = useState<boolean>(raffle.likeStatus);
@@ -291,7 +292,10 @@ const Item: React.FC<RaffleDetailProps> = ({ ...raffle }) => {
           </DetailContainer>
           <DetailContainer>
             <TitleBox>정가</TitleBox>
-            <DescriptionBox>{raffle.minTicket}</DescriptionBox>
+            <DescriptionBox>
+              <img src={smallTicket} alt="ticket" />
+              {raffle.minTicket}
+            </DescriptionBox>
           </DetailContainer>
           {isLargeScreen && ActionArea}
         </DetailLayout>
@@ -487,9 +491,8 @@ const TitleBox = styled.div`
 const DescriptionBox = styled.div`
   display: flex;
   width: 269px;
-  height: 19px;
-  flex-direction: column;
-  justify-content: center;
+  align-items: center;
+  gap: 6px;
   flex-shrink: 0;
 
   color: #000;
@@ -498,6 +501,12 @@ const DescriptionBox = styled.div`
   font-style: normal;
   font-weight: 400;
   line-height: 150%; /* 30px */
+
+  img {
+    /* 글자 크기(20px)와 비슷하게 보이도록 높이를 조절합니다. */
+    height: 22px;
+    width: auto;
+  }
 `;
 
 const TextBox = styled.div`

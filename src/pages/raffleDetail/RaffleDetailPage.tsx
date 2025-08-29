@@ -36,6 +36,7 @@ const RaffleDetailPage: React.FC = () => {
     deliveryId: 0,
     followStatus: false,
     storeImageUrl: '',
+    minTicket: 0,
   });
   const clientId = getClientId();
   const typeNumber = type ? parseInt(type, 10) : undefined;
