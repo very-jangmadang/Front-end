@@ -222,10 +222,6 @@ const Item: React.FC<RaffleDetailProps> = ({ ...raffle }) => {
           찜하기
         </LikeBox>
       </ButtonContainer>
-      <WarningBox>
-        판매자 희망 최소 참여자 이상 모이지 않으면 당첨자 없이 취소될 수
-        있습니다. 취소된 래플에 대한 티켓은 다시 적립됩니다.
-      </WarningBox>
     </>
   );
 

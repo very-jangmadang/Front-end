@@ -51,6 +51,7 @@ const MyProfilePage: React.FC = () => {
 
       const { data } = await axiosInstance.get(endpoint);
       console.log(`${selectedToggle}: `, data);
+      console.log('API 응답 전체 구조:', JSON.stringify(data, null, 2));
 
       if (data.isSuccess) {
         let raffles = [];
@@ -84,10 +85,20 @@ const MyProfilePage: React.FC = () => {
             const endTime = new Date(item.timeUntilEnd).getTime();
             const isFinished = endTime > 0 ? false : true;
 
-            return {
+            const mappedItem = {
               ...item,
               finished: isFinished, // 현재 시간과 마감 시간 비교 결과
+              raffleStatus: item.raffleStatus || item.status || 'ACTIVE', // raffleStatus 필드 추가
             };
+
+            // 디버깅: raffleStatus 값 확인
+            console.log('마이페이지 래플 데이터 매핑:', {
+              original: item,
+              mapped: mappedItem,
+              raffleStatus: mappedItem.raffleStatus
+            });
+
+            return mappedItem;
           });
         }
 

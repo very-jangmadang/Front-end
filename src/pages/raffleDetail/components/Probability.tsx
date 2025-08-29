@@ -53,9 +53,6 @@ const Probability: React.FC<RaffleDetailProps> = (raffle) => {
             <ParticipantBox>
               현재 참여자 수 : {raffle.applyCount}명
             </ParticipantBox>
-            <ParticipantBox>
-              판매자 희망 최소 참여자 : {raffle.minUser}명
-            </ParticipantBox>
           </InfoContainer>
         </>
       )}
@@ -71,9 +68,6 @@ const Probability: React.FC<RaffleDetailProps> = (raffle) => {
                 <ParticipantBox>
                   현재 참여자 수 : {raffle.applyCount}명
                 </ParticipantBox>
-                <ParticipantBox>
-                  판매자 희망 최소 참여자 : {raffle.minUser}명
-                </ParticipantBox>
               </InfoContainer>
             </CenteredContainer>
           )}
@@ -86,9 +80,6 @@ const Probability: React.FC<RaffleDetailProps> = (raffle) => {
                   <InfoContainer>
                     <ParticipantBox>
                       현재 참여자 수 : {raffle.applyCount}명
-                    </ParticipantBox>
-                    <ParticipantBox>
-                      판매자 희망 최소 참여자 : {raffle.minUser}명
                     </ParticipantBox>
                   </InfoContainer>
                 </CenteredContainer>
@@ -114,9 +105,6 @@ const Probability: React.FC<RaffleDetailProps> = (raffle) => {
               <InfoContainer>
                 <ParticipantBox>
                   현재 참여자 수 : {raffle.applyCount}명
-                </ParticipantBox>
-                <ParticipantBox>
-                  판매자 희망 최소 참여자 : {raffle.minUser}명
                 </ParticipantBox>
               </InfoContainer>
             </CenteredContainer>
