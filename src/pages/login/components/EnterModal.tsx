@@ -5,6 +5,7 @@ import Modal from '../../../components/Modal/Modal';
 import media from '../../../styles/media';
 import { Icon } from '@iconify/react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../../context/AuthContext';
 
 interface ModalProps {
   onClose: () => void;
@@ -15,6 +16,15 @@ const EnterModal: React.FC<ModalProps> = ({ onClose }) => {
   const [isLargeScreen, setIsLargeScreen] = useState<boolean>(() =>
     typeof window !== 'undefined' ? window.innerWidth >= 745 : false,
   );
+  const { login } = useAuth();
+
+  useEffect(() => {
+    // EnterModal이 표시될 때 로그인 상태를 확인하고 갱신합니다.
+    const performLogin = async () => {
+      await login();
+    };
+    performLogin();
+  }, [login]);
 
   useEffect(() => {
     const handleResize = () => {

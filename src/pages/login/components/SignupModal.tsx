@@ -8,7 +8,6 @@ import { useModalContext } from '../../../components/Modal/context/ModalContext'
 import { Icon } from '@iconify/react';
 import axiosInstance from '../../../apis/axiosInstance';
 import { AxiosError } from 'axios';
-import { useAuth } from '../../../context/AuthContext';
 
 interface ModalProps {
   onClose: () => void;
@@ -49,7 +48,6 @@ const SignupModal: React.FC<ModalProps> = ({ onClose, isBusiness = false }) => {
   const { openModal } = useModalContext();
   const [isError, setIsError] = useState('');
   const [name, setName] = useState('');
-  const { login } = useAuth();
 
   const regex = /^[가-힣a-zA-Z0-9]{2,10}$/;
 
@@ -84,7 +82,7 @@ const SignupModal: React.FC<ModalProps> = ({ onClose, isBusiness = false }) => {
 
       if (response.isSuccess) {
         setIsError('');
-        await login();
+
         console.log('회원가입 성공 - EnterModal 열기');
         onClose(); // 현재 모달 닫기
         openModal(({ onClose }) => <EnterModal onClose={onClose} />);
