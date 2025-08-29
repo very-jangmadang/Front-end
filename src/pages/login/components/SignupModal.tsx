@@ -8,6 +8,7 @@ import { useModalContext } from '../../../components/Modal/context/ModalContext'
 import { Icon } from '@iconify/react';
 import axiosInstance from '../../../apis/axiosInstance';
 import { AxiosError } from 'axios';
+import { useAuth } from '../../../context/AuthContext';
 
 interface ModalProps {
   onClose: () => void;
@@ -15,19 +16,27 @@ interface ModalProps {
 }
 
 const RequestSignUp = async (nickname: string, isBusiness: boolean) => {
-  console.log('회원가입 요청 시작:', { nickname, isBusiness, baseURL: axiosInstance.defaults.baseURL });
-  
+  console.log('회원가입 요청 시작:', {
+    nickname,
+    isBusiness,
+    baseURL: axiosInstance.defaults.baseURL,
+  });
+
   try {
-    const response = await axiosInstance.post('/api/permit/nickname', {
-      nickname,
-      isBusiness,
-    }, {
-      withCredentials: true,
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest'
-      }
-    });
+    const response = await axiosInstance.post(
+      '/api/permit/nickname',
+      {
+        nickname,
+        isBusiness,
+      },
+      {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+      },
+    );
     console.log('회원가입 응답:', response.data);
     return response.data;
   } catch (error) {
@@ -40,6 +49,7 @@ const SignupModal: React.FC<ModalProps> = ({ onClose, isBusiness = false }) => {
   const { openModal } = useModalContext();
   const [isError, setIsError] = useState('');
   const [name, setName] = useState('');
+  const { login } = useAuth();
 
   const regex = /^[가-힣a-zA-Z0-9]{2,10}$/;
 
@@ -57,13 +67,16 @@ const SignupModal: React.FC<ModalProps> = ({ onClose, isBusiness = false }) => {
     console.log('정규식 테스트 결과:', regex.test(name));
     console.log('현재 axiosInstance baseURL:', axiosInstance.defaults.baseURL);
     console.log('현재 쿠키:', document.cookie);
-    
+
     if (!regex.test(name)) {
       setIsError('닉네임은 2~10자의 한글 또는 영어만 사용 가능합니다.');
       return;
     }
 
-    console.log('회원가입 프로세스 시작:', { name, baseURL: axiosInstance.defaults.baseURL });
+    console.log('회원가입 프로세스 시작:', {
+      name,
+      baseURL: axiosInstance.defaults.baseURL,
+    });
 
     try {
       const response = await RequestSignUp(name, isBusiness);
@@ -71,6 +84,7 @@ const SignupModal: React.FC<ModalProps> = ({ onClose, isBusiness = false }) => {
 
       if (response.isSuccess) {
         setIsError('');
+        await login();
         console.log('회원가입 성공 - EnterModal 열기');
         onClose(); // 현재 모달 닫기
         openModal(({ onClose }) => <EnterModal onClose={onClose} />);
@@ -93,7 +107,7 @@ const SignupModal: React.FC<ModalProps> = ({ onClose, isBusiness = false }) => {
         console.error('서버 응답 에러:', {
           status: error.response.status,
           data: error.response.data,
-          headers: error.response.headers
+          headers: error.response.headers,
         });
 
         if (error.response.status === 400) {
@@ -112,7 +126,9 @@ const SignupModal: React.FC<ModalProps> = ({ onClose, isBusiness = false }) => {
         } else if (error.response.status === 500) {
           setIsError('서버 오류가 발생했습니다.');
         } else {
-          setIsError(error.response.data?.message || '회원가입 중 오류가 발생했습니다.');
+          setIsError(
+            error.response.data?.message || '회원가입 중 오류가 발생했습니다.',
+          );
         }
       } else if (error.request) {
         console.error('네트워크 에러:', error.request);
@@ -428,4 +444,3 @@ const Line = styled.div`
 `;
 
 export default SignupModal;
-
